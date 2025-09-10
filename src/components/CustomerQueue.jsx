@@ -11,7 +11,6 @@ export default function CustomerQueue({
   onUpdateCustomer = () => {},
 }) {
   const navigate = useNavigate();
-  // Only show customers with pending items (active customers)
   const activeCustomers = customers.filter(
     (c) => pending[c.id] && pending[c.id].items && pending[c.id].items.length > 0
   );
