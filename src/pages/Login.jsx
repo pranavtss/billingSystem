@@ -1,55 +1,51 @@
-// LoginPage.jsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-export default function Login() {
-  const [username, setUsername] = useState("");
+
+export default function Login({ users }) {
+  const [id, setId] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
-
-    const users = [
-      { username: "admin1", password: "1234", role: "admin" },
-      { username: "admin2", password: "5678", role: "admin" },
-      { username: "user1", password: "6987", role: "user" },
-      { username: "user2", password: "5555", role: "user" },
-    ];
-
-    const found = users.find(
-      (u) => u.username === username && u.password === password
-    );
-    if (!found) {
+  function handleLogin() {
+    // Find user by id and password
+    const user = users.find(u => u.id === id && u.password === password);
+    if (user) {
+      localStorage.setItem("role", user.role);
+      localStorage.setItem("currentUser", user.id);
+      if (user.role === "admin") {
+        navigate("/admin");
+      } else {
+        navigate("/user");
+      }
+    } else {
       alert("Invalid credentials");
-      return;
     }
-
-    if (found.role === "admin") navigate("/admin");
-    else navigate("/user");
-  };
+  }
 
   return (
-    <div className="flex items-center justify-center h-screen">
-      <form onSubmit={handleLogin} className="p-6 bg-gray-200 rounded-xl">
+    <div className="flex justify-center items-center h-screen bg-slate-50">
+      <div className="bg-white p-6 rounded shadow w-80">
         <h2 className="text-xl font-bold mb-4">Login</h2>
         <input
-          type="text"
-          placeholder="Username"
-          className="block mb-2 p-2 border"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
+          placeholder="User ID"
+          className="w-full border p-2 mb-2"
+          value={id}
+          onChange={e => setId(e.target.value)}
         />
         <input
           type="password"
           placeholder="Password"
-          className="block mb-2 p-2 border"
+          className="w-full border p-2 mb-2"
           value={password}
-          onChange={(e) => setPassword(e.target.value)}
+          onChange={e => setPassword(e.target.value)}
         />
-        <button className="px-4 py-2 bg-blue-500 text-white rounded">
+        <button
+          onClick={handleLogin}
+          className="w-full bg-blue-600 text-white py-2 rounded"
+        >
           Login
         </button>
-      </form>
+      </div>
     </div>
   );
 }
