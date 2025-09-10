@@ -133,7 +133,7 @@ export default function Admin({
           </ul>
         </Card>
 
-        {/* Customer */}
+        {/* Customers */}
         <Card title="Create Customer">
           <input
             placeholder="ID"
