@@ -161,7 +161,7 @@ export default function Admin({
           </button>
         </Card>
 
-        {/* Fish */}
+        {/* Fishes */}
         <Card title="Edit Fish Price">
           <Dropdown
             options={data.fishes.map((f) => ({
