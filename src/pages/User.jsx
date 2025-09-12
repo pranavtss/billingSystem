@@ -1,47 +1,55 @@
 import React, { useState } from "react";
-import Dropdown from "../components/Dropdown";
 import Logout from "../components/Logout";
-import { useNavigate } from "react-router-dom";
+//import { useNavigate } from "react-router-dom";
+import SearchBarForUpdate from "../components/SearchBarForUpdate";
 
 export default function User({ data, addPurchase }) {
-  const navigate = useNavigate();
+
   const [userId] = useState(localStorage.getItem("currentUser") || "user");
+  const [fishIdentifier, setFishIdentifier] = useState("");
   const [customerId, setCustomerId] = useState("");
   const [fishId, setFishId] = useState("");
   const [qty, setQty] = useState("");
 
+  
   function handleAdd() {
-    if (!customerId || !fishId || !qty) return alert("Fill customer, fish and qty");
-    const res = addPurchase({ userId, customerId, fishId, qty });
+    // resolve fish id from either the legacy dropdown value (fishId) or the new search box (fishIdentifier)
+    const resolvedFishId = fishId || fishIdentifier;
+    if (!customerId || !resolvedFishId || !qty) return alert("Fill customer, fish and qty");
+    const res = addPurchase({ userId, customerId, fishId: resolvedFishId, qty });
     if (!res.ok) return alert(res.msg || "Failed");
+    // clear both possible inputs
     setFishId("");
+    setFishIdentifier("");
     setQty("");
     alert("Added to pending (admin will finalize)");
   }
 
   return (
-    <div className="min-h-screen p-6 bg-slate-50">
+    <div className="min-h-screen p-6 bg-slate-50 ">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-bold text-gray-800">User Dashboard — {data.users.find(u => u.id === userId)?.name || userId}</h2>
         <Logout />
       </div>
-
-      <div className="max-w-md mx-auto bg-white p-4 rounded-xl shadow">
+  <div className="max-w-md mx-auto bg-white p-4 rounded-xl shadow flex flex-col gap-4">
         <h3 className="font-semibold mb-2">Add Purchase (pending)</h3>
-        <input
-          placeholder="Customer ID"
-          className="w-full border p-2 mb-2 rounded"
+        <SearchBarForUpdate
+          options={data.customers.map((f) => ({
+            value: `${f.id}`,
+            label: `${f.id} - ${f.name}`,
+          }))}
           value={customerId}
-          onChange={(e) => setCustomerId(e.target.value)}
+          onChange={setCustomerId}
+          placeholder={"Search customer by ID or name..."}
         />
-        <Dropdown
-          label="Fish"
-          value={fishId}
-          onChange={setFishId}
+        <SearchBarForUpdate
           options={data.fishes.map((f) => ({
-            value: f.id,
+            value: `${f.id}`,
             label: `${f.id} - ${f.name} (₹${f.price})`,
           }))}
+          value={fishIdentifier}
+          onChange={setFishIdentifier}
+          placeholder="Search fish by ID or name..."
         />
         <input
           placeholder="Quantity (kg)"

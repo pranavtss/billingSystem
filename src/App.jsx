@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { BrowserRouter, Routes, Route, useNavigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Login from "./pages/Login";
 import Admin from "./pages/Admin";
 import User from "./pages/User";
 import History from "./pages/History";
+import Customers from "./pages/Customers";
 
 const STORAGE_KEY = "fishshop_data_v3";
 
@@ -26,7 +27,7 @@ function loadData() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) return JSON.parse(raw);
-  } catch (e) {}
+  } catch (e) {console.log(e);}
   localStorage.setItem(STORAGE_KEY, JSON.stringify(defaultData));
   return JSON.parse(JSON.stringify(defaultData));
 }
@@ -144,6 +145,7 @@ export default function App() {
         <Route path="/admin" element={
           <Admin
             data={data}
+            setData={setData}
             addUser={addUser}
             addCustomer={addCustomer}
             addFish={addFish}
@@ -158,7 +160,8 @@ export default function App() {
         <Route path="/user" element={
           <User data={data} addPurchase={addPurchase} />
         } />
-  <Route path="/history" element={<History history={data.history} users={data.users} />} />
+        <Route path="/history" element={<History history={data.history} users={data.users} />} />
+        <Route path="/customers" element={<Customers data={data} />} />
       </Routes>
     </BrowserRouter>
   );
