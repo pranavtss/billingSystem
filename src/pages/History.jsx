@@ -7,7 +7,7 @@ export default function History({ history, users }) {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const params = new URLSearchParams(window.location.search);
-  const customerId = params.get("customer");
+  const customerId = params.get("customerId");
   const filtered = useMemo(()=> {
     let list = history;
     if (customerId) list = list.filter(h => h.customerId === customerId);

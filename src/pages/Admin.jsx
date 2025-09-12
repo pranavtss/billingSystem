@@ -71,8 +71,8 @@ export default function Admin({
     : data.customers;
 
   return (
-    <div className="min-h-screen p-6 bg-slate-50">
-      <div className="flex justify-between items-center mb-6">
+    <div className="min-h-screen p-4 sm:p-6 bg-slate-50">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
         <h2 className="text-2xl font-bold text-gray-800">
           Dashboard {data.users.find((u) => u.id === localStorage.getItem("currentUser"))?.name || localStorage.getItem("currentUser") || "Admin"}
         </h2>
@@ -84,7 +84,7 @@ export default function Admin({
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-6 mb-6">
+  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-6 w-full">
         <CreateUserContainer
           newUser={newUser}
           setNewUser={setNewUser}
@@ -108,7 +108,7 @@ export default function Admin({
           deleteFish={deleteFish}
         />
       </div>
-      <div className="grid grid-cols-3 gap-6">
+  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
         <AddFishContainer
           newFish={newFish}
           setNewFish={setNewFish}

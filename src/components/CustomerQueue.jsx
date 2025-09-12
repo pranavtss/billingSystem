@@ -23,7 +23,7 @@ export default function CustomerQueue({
     <div>
       <div className="w-full flex flex-col items-center">
         <h2 className="text-lg font-semibold mb-2">Customers (Queue)</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 w-full">
+        <div className="grid grid-rows-1 md:grid-rows-2 lg:grid-rows-3 gap-4 w-full">
           {activeCustomers.length === 0 ? (
             <div className="text-gray-500 text-center col-span-3">No active customers</div>
           ) : (
