@@ -70,6 +70,20 @@ export default function App() {
     return { ok: true };
   }
 
+  // Delete customer
+  function deleteCustomer(customerId) {
+    const customers = data.customers.filter(c => c.id !== customerId);
+    setData({ ...data, customers });
+    return { ok: true };
+  }
+
+  // Edit customer
+  function editCustomer(updated) {
+    const customers = data.customers.map(c => c.id === updated.id ? { ...c, ...updated } : c);
+    setData({ ...data, customers });
+    return { ok: true };
+  }
+
   // Delete fish
   function deleteFish(fishId) {
     const fishes = data.fishes.filter(f => f.id !== fishId);
@@ -81,9 +95,10 @@ export default function App() {
   function addFish(fish) {
     if (!fish.id || !fish.name || (fish.price === undefined || fish.price === "")) return { ok:false, msg:"Provide id,name,price" };
     if (data.fishes.find((f) => f.id === fish.id)) return { ok:false, msg:"Fish id exists" };
-    const next = { ...data, fishes: [...data.fishes, { ...fish, price: Number(fish.price) }] };
-    setData(next);
-    return { ok:true };
+  const next = { ...data, fishes: [...data.fishes, { ...fish, price: Number(fish.price) }] };
+  setData(next);
+  saveData(next);
+  return { ok:true };
   }
 
   // Edit fish price by id or name
@@ -100,7 +115,16 @@ export default function App() {
   // User adds a purchase -> goes into pending[customerId] (multiple items allowed)
   function addPurchase({ userId, customerId, fishId, qty, priceOverride }) {
     if (!userId || !customerId || !fishId || !qty) return { ok:false, msg:"Provide user,customer,fish,qty" };
-    const fish = data.fishes.find((f) => f.id === fishId);
+    // Try to find fish by id (string/number), then by name (case-insensitive), and trim whitespace
+    const fishKey = String(fishId).trim();
+    let fish = data.fishes.find((f) => String(f.id).trim() === fishKey);
+    if (!fish) {
+      fish = data.fishes.find((f) => f.name.toLowerCase().trim() === fishKey.toLowerCase());
+    }
+    if (!fish) {
+      // Try matching id as number if user entered numeric id
+      fish = data.fishes.find((f) => Number(f.id) === Number(fishKey));
+    }
     if (!fish) return { ok:false, msg:"Fish not found" };
     const price = priceOverride !== undefined && priceOverride !== "" ? Number(priceOverride) : Number(fish.price);
     const pending = { ...data.pending };
@@ -161,7 +185,11 @@ export default function App() {
           <User data={data} addPurchase={addPurchase} />
         } />
         <Route path="/history" element={<History history={data.history} users={data.users} />} />
-        <Route path="/customers" element={<Customers data={data} />} />
+        <Route path="/customers" element={<Customers data={{
+          ...data,
+          deleteCustomer,
+          editCustomer
+        }} />} />
       </Routes>
     </BrowserRouter>
   );
