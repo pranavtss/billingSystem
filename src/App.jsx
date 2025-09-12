@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Login from "./pages/Login";
+import ViewUsers from "./pages/ViewUsers";
 import Admin from "./pages/Admin";
 import User from "./pages/User";
 import History from "./pages/History";
@@ -184,6 +185,7 @@ export default function App() {
         <Route path="/user" element={
           <User data={data} addPurchase={addPurchase} />
         } />
+  <Route path="/users" element={<ViewUsers users={data.users} deleteUser={deleteUser} />} />
         <Route path="/history" element={<History history={data.history} users={data.users} />} />
         <Route path="/customers" element={<Customers data={{
           ...data,

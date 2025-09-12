@@ -8,8 +8,7 @@ export default function CreateCustomerContainer({ newCustomer, setNewCustomer, h
       <input placeholder="Name" className="w-full border p-2 rounded mb-2" value={newCustomer.name} onChange={e => setNewCustomer({ ...newCustomer, name: e.target.value })} />
       <input placeholder="Phone" className="w-full border p-2 rounded mb-2" value={newCustomer.phone} onChange={e => setNewCustomer({ ...newCustomer, phone: e.target.value })} />
       <button className="mt-2 px-3 py-1 bg-indigo-600 text-white rounded hover:bg-indigo-700" onClick={handleAddCustomer}>Add Customer</button>
-      <br />
-      <button className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700" onClick={() => navigate("/customers")}>View All Customers</button>
+      <button className="px-3 py-1 bg-indigo-600 text-white rounded hover:bg-indigo-700" onClick={() => navigate("/customers")}>View All Customers</button>
     </div>
   );
 }

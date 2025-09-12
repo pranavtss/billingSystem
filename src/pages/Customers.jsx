@@ -1,18 +1,22 @@
 import React, { useState } from 'react'
+import { useNavigate } from 'react-router-dom';
 import EditCustomerModal from '../components/EditCustomerModal';
 import { DeleteButton, EditButton } from '../components/ActionButton';
 import SearchBar from '../components/SearchBar';
 
 function Customers({data}) {
+  const navigate = useNavigate();
   const [editOpen, setEditOpen] = useState(false);
   const [editCustomer, setEditCustomer] = useState(null);
   const [search, setSearch] = useState("");
-  const filteredCustomers = data.customers.filter(
-    (customer) =>
-      customer.name.toLowerCase().includes(search.toLowerCase()) ||
-      customer.phone.toLowerCase().includes(search.toLowerCase()) ||
-      String(customer.id).includes(search)
-  );
+  const filteredCustomers = [...data.customers]
+    .sort((a, b) => String(a.id).localeCompare(String(b.id)))
+    .filter(
+      (customer) =>
+        customer.name.toLowerCase().includes(search.toLowerCase()) ||
+        customer.phone.toLowerCase().includes(search.toLowerCase()) ||
+        String(customer.id).includes(search)
+    );
   function handleDeleteCustomer(id) {
     if (window.confirm('Delete this customer?')) {
       if (data.deleteCustomer) data.deleteCustomer(id);
@@ -57,9 +61,15 @@ function Customers({data}) {
               <td className="py-2 px-4 border-b border-r text-center">{customer.id}</td>
               <td className="py-2 px-4 border-b border-r text-center">{customer.name}</td>
               <td className="py-2 px-4 border-b border-r text-center">{customer.phone}</td>
-              <td className="py-2 px-4 border-b text-center">
-                <DeleteButton onClick={() => handleDeleteCustomer(customer.id)} />
+              <td className="py-2 px-4 border-b text-center flex justify-center gap-2">
+                <button
+                  className="bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600 transition"
+                  onClick={() => navigate(`/history?customerId=${customer.id}`)}
+                >
+                  View
+                </button>
                 <EditButton onClick={() => handleEditCustomer(customer)} />
+                <DeleteButton onClick={() => handleDeleteCustomer(customer.id)} />
               </td>
             </tr>
           ))}
