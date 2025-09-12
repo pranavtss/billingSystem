@@ -3,10 +3,10 @@ import { useNavigate } from "react-router-dom";
 import Card from "../components/Card";
 import EditBillModal from "../components/EditBillModal";
 import Logout from "../components/Logout";
-import Dropdown from "../components/Dropdown";
 import SearchBar from "../components/SearchBar";
 import CustomerQueue from "../components/CustomerQueue";
 import PurchaseList from "../components/PurchaseList";
+import SearchBarForUpdate from "../components/SearchBarForUpdate";
 
 export default function Admin({
   data,
@@ -14,11 +14,11 @@ export default function Admin({
   addCustomer,
   addFish,
   editFishPrice,
-  addPurchase,
   submitPendingBill,
   pendingTotal,
   deleteUser,
-  deleteFish
+  deleteFish,
+  setData,
 }) {
   const [editBillOpen, setEditBillOpen] = useState(false);
   const [editBillCustomerId, setEditBillCustomerId] = useState(null);
@@ -29,25 +29,26 @@ export default function Admin({
   const [search, setSearch] = useState("");
   const [fishIdentifier, setFishIdentifier] = useState("");
   const [priceInput, setPriceInput] = useState("");
-  const [newFish, setNewFish] = useState({ id: "", name: "", price: "" });
-  const [selectedCustomerId, setSelectedCustomerId] = useState(null);
-  const [customPrice, setCustomPrice] = useState("");
+  const [newFish, setNewFish] = useState({ id: "", name: "", price: "" })
 
   function handleAddUser() {
-    const res = addUser(newUser);
+    const res = addUser({ ...newUser, role: "user" });
     if (!res.ok) return alert(res.msg);
     setNewUser({ id: "", name: "", password: "" });
   }
+
   function handleAddCustomer() {
     const res = addCustomer(newCustomer);
     if (!res.ok) return alert(res.msg);
     setNewCustomer({ id: "", name: "", phone: "" });
   }
+
   function handleAddFish() {
     const res = addFish(newFish);
     if (!res.ok) return alert(res.msg);
     setNewFish({ id: "", name: "", price: "" });
   }
+
   function handleEditFishPrice() {
     if (!fishIdentifier || priceInput === "") return alert("Enter fish id/name and price");
     const ident = fishIdentifier.includes(" - ") ? fishIdentifier.split(" - ")[0] : fishIdentifier;
@@ -58,192 +59,86 @@ export default function Admin({
   }
 
   function handleSubmitAndPrint(customerId) {
-    const res = submitPendingBill(customerId, customPrice);
+    const res = submitPendingBill(customerId, null, false);
     if (!res.ok) return alert(res.msg);
     alert("Submitted and moved to history");
   }
 
-  const filteredCustomers = data.customers.filter(
-    (c) =>
-      c.name.toLowerCase().includes(search.toLowerCase()) ||
-      c.id.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredCustomers = search
+    ? data.customers.filter((c) => c.name.toLowerCase().includes(search.toLowerCase()) || c.id.toLowerCase().includes(search.toLowerCase()))
+    : data.customers;
 
   return (
     <div className="min-h-screen p-6 bg-slate-50">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold text-gray-800">
-          Dashboard {data.users.find(u => u.id === localStorage.getItem("currentUser"))?.name || localStorage.getItem("currentUser") || "Admin"}
+          Dashboard {data.users.find((u) => u.id === localStorage.getItem("currentUser"))?.name || localStorage.getItem("currentUser") || "Admin"}
         </h2>
         <div className="flex gap-2">
-          <button
-            onClick={() => navigate("/history")}
-            className="px-3 py-1 bg-slate-200 rounded hover:bg-slate-300"
-          >
+          <button onClick={() => navigate("/history")} className="px-3 py-1 bg-slate-200 rounded hover:bg-slate-300">
             History Page
           </button>
           <Logout />
         </div>
       </div>
 
-      {/* Create Sections */}
       <div className="grid grid-cols-3 gap-6 mb-6">
-        {/* User */}
         <Card title="Create User">
-          <input
-            placeholder="ID"
-            className="w-full border p-2 rounded mb-2"
-            value={newUser.id}
-            onChange={(e) => setNewUser({ ...newUser, id: e.target.value })}
-          />
-          <input
-            placeholder="Name"
-            className="w-full border p-2 rounded mb-2"
-            value={newUser.name}
-            onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
-          />
-          <input
-            placeholder="Password"
-            type="password"
-            className="w-full border p-2 rounded mb-2"
-            value={newUser.password}
-            onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
-          />
-          <button
-            className="mt-2 px-3 py-1 bg-indigo-600 text-white rounded hover:bg-indigo-700"
-            onClick={handleAddUser}
-          >
-            Add User
-          </button>
+          <input placeholder="ID" className="w-full border p-2 rounded mb-2" value={newUser.id} onChange={(e) => setNewUser({ ...newUser, id: e.target.value })} />
+          <input placeholder="Name" className="w-full border p-2 rounded mb-2" value={newUser.name} onChange={(e) => setNewUser({ ...newUser, name: e.target.value })} />
+          <input placeholder="Password" type="password" className="w-full border p-2 rounded mb-2" value={newUser.password} onChange={(e) => setNewUser({ ...newUser, password: e.target.value })} />
+          <button className="mt-2 px-3 py-1 bg-indigo-600 text-white rounded hover:bg-indigo-700" onClick={handleAddUser}>Add User</button>
 
           <ul className="mt-3 space-y-1 text-sm">
-            {data.users
-              .filter((u) => u.role !== "admin")
-              .map((u) => (
-                <li key={u.id} className="flex justify-between items-center">
-                  <span>{u.id} — {u.name}</span>
-                  <button
-                    className="text-red-600 text-xs hover:underline"
-                    onClick={() => deleteUser(u.id)}
-                  >
-                    Delete
-                  </button>
-                </li>
-              ))}
+            {data.users.filter((u) => u.role !== "admin").map((u) => (
+              <li key={u.id} className="flex justify-between items-center">
+                <span>{u.id} — {u.name}</span>
+                <button className="text-red-600 text-xs hover:underline" onClick={() => deleteUser(u.id)}>Delete</button>
+              </li>
+            ))}
           </ul>
         </Card>
 
-        {/* Customer */}
         <Card title="Create Customer">
-          <input
-            placeholder="ID"
-            className="w-full border p-2 rounded mb-2"
-            value={newCustomer.id}
-            onChange={(e) => setNewCustomer({ ...newCustomer, id: e.target.value })}
-          />
-          <input
-            placeholder="Name"
-            className="w-full border p-2 rounded mb-2"
-            value={newCustomer.name}
-            onChange={(e) => setNewCustomer({ ...newCustomer, name: e.target.value })}
-          />
-          <input
-            placeholder="Phone"
-            className="w-full border p-2 rounded mb-2"
-            value={newCustomer.phone}
-            onChange={(e) => setNewCustomer({ ...newCustomer, phone: e.target.value })}
-          />
-          <button
-            className="mt-2 px-3 py-1 bg-indigo-600 text-white rounded hover:bg-indigo-700"
-            onClick={handleAddCustomer}
-          >
-            Add Customer
-          </button>
+          <input placeholder="ID" className="w-full border p-2 rounded mb-2" value={newCustomer.id} onChange={(e) => setNewCustomer({ ...newCustomer, id: e.target.value })} />
+          <input placeholder="Name" className="w-full border p-2 rounded mb-2" value={newCustomer.name} onChange={(e) => setNewCustomer({ ...newCustomer, name: e.target.value })} />
+          <input placeholder="Phone" className="w-full border p-2 rounded mb-2" value={newCustomer.phone} onChange={(e) => setNewCustomer({ ...newCustomer, phone: e.target.value })} />
+          <input placeholder="Update Pending amount" className="w-full border p-2 rounded mb-2" value={newCustomer.pendingAmount || ""} onChange={(e) => setNewCustomer({ ...newCustomer, pendingAmount: e.target.value })} />
+          <button className="mt-2 px-3 py-1 bg-indigo-600 text-white rounded hover:bg-indigo-700" onClick={handleAddCustomer}>Add Customer</button>
+          <br />
+          <button className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700" onClick={() => navigate("/customers")}>View All Customers</button>
         </Card>
 
-        {/* Fish */}
         <Card title="Edit Fish Price">
-          <Dropdown
-            options={data.fishes.map((f) => ({
-              value: `${f.id} - ${f.name}`,
-              label: `${f.id} - ${f.name} (₹${f.price})`,
-            }))}
-            value={fishIdentifier}
-            onChange={setFishIdentifier}
-          />
-          <input
-            placeholder="New Price"
-            className="w-full border p-2 rounded mt-2"
-            value={priceInput}
-            onChange={(e) => setPriceInput(e.target.value)}
-          />
-          <button
-            className="mt-2 px-3 py-1 bg-indigo-600 text-white rounded hover:bg-indigo-700"
-            onClick={handleEditFishPrice}
-          >
-            Update Price
-          </button>
+          <SearchBarForUpdate options={data.fishes.map((f) => ({ value: `${f.id}`, label: `${f.id} - ${f.name} (₹${f.price})` }))} value={fishIdentifier} onChange={setFishIdentifier} placeholder="Search fish by ID or name..." />
+          <input placeholder="New Price" className="w-full border p-2 rounded mt-2" value={priceInput} onChange={(e) => setPriceInput(e.target.value)} />
+          <button className="mt-2 px-3 py-1 bg-indigo-600 text-white rounded hover:bg-indigo-700" onClick={handleEditFishPrice}>Update Price</button>
 
           <ul className="mt-3 space-y-1 text-sm">
             {data.fishes.map((f) => (
               <li key={f.id} className="flex justify-between items-center">
                 <span>{f.id} — {f.name} (₹{f.price})</span>
-                <button
-                  className="text-red-600 text-xs hover:underline"
-                  onClick={() => deleteFish(f.id)}
-                >
-                  Delete
-                </button>
+                <button className="text-red-600 text-xs hover:underline" onClick={() => deleteFish(f.id)}>Delete</button>
               </li>
             ))}
           </ul>
         </Card>
       </div>
 
-      {/* Pending and Customers */}
       <div className="grid grid-cols-3 gap-6">
-        {/* Left: Add Fish Card */}
         <div>
           <Card title="Add New Fish">
-            <input
-              placeholder="Fish ID"
-              className="w-full border p-2 mb-2 rounded"
-              value={newFish.id}
-              onChange={e => setNewFish(f => ({ ...f, id: e.target.value }))}
-            />
-            <input
-              placeholder="Name"
-              className="w-full border p-2 mb-2 rounded"
-              value={newFish.name}
-              onChange={e => setNewFish(f => ({ ...f, name: e.target.value }))}
-            />
-            <input
-              placeholder="Price"
-              className="w-full border p-2 mb-2 rounded"
-              value={newFish.price}
-              onChange={e => setNewFish(f => ({ ...f, price: e.target.value }))}
-            />
-            <button
-              className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700"
-              onClick={handleAddFish}
-            >
-              Add Fish
-            </button>
+            <input placeholder="Fish ID" className="w-full border p-2 mb-2 rounded" value={newFish.id} onChange={(e) => setNewFish((f) => ({ ...f, id: e.target.value }))} />
+            <input placeholder="Name" className="w-full border p-2 mb-2 rounded" value={newFish.name} onChange={(e) => setNewFish((f) => ({ ...f, name: e.target.value }))} />
+            <input placeholder="Price" className="w-full border p-2 mb-2 rounded" value={newFish.price} onChange={(e) => setNewFish((f) => ({ ...f, price: e.target.value }))} />
+            <button className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700" onClick={handleAddFish}>Add Fish</button>
           </Card>
         </div>
-        {/* Middle: Empty for future use or spacing */}
         <div></div>
-        {/* Right: Customers (Queue) */}
+
         <div>
-          <SearchBar
-            value={search}
-            onChange={setSearch}
-            placeholder="Search customers by name or id..."
-          />
-          <CustomerQueue
-            customers={search ? data.customers : filteredCustomers}
-            pending={data.pending}
-            pendingTotal={pendingTotal}
+          <SearchBar value={search} onChange={setSearch} placeholder="Search customers by name or id..." />
+          <CustomerQueue customers={filteredCustomers} pending={data.pending} pendingTotal={pendingTotal}
             onSubmit={(cid) => handleSubmitAndPrint(cid)}
             onDeleteCustomer={(id) => {
               if (window.confirm("Delete this bill for customer?")) {
@@ -257,10 +152,8 @@ export default function Admin({
               setEditBillOpen(true);
             }}
           />
-          <EditBillModal
-            open={editBillOpen}
-            bill={editBillCustomerId ? data.pending[editBillCustomerId] : null}
-            fishes={data.fishes}
+
+          <EditBillModal open={editBillOpen} bill={editBillCustomerId ? data.pending[editBillCustomerId] : null} fishes={data.fishes}
             onSave={(updatedBill) => {
               const pending = { ...data.pending };
               pending[editBillCustomerId] = {
@@ -268,6 +161,8 @@ export default function Admin({
                 items: updatedBill.items,
               };
               setData({ ...data, pending });
+              setEditBillOpen(false);
+              setEditBillCustomerId(null);
             }}
             onClose={() => {
               setEditBillOpen(false);

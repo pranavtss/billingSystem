@@ -3,8 +3,6 @@ import HistoryList from "../components/HistoryList";
 import SearchBar from "../components/SearchBar";
 import { useNavigate } from "react-router-dom";
 
-function currency(x){ return `₹ ${Number(x||0).toFixed(2)}`; }
-
 export default function History({ history, users }) {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
