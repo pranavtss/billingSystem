@@ -91,7 +91,7 @@ export default function App() {
     return { ok: true };
   }
 
-  // Add fish
+  // Add fishes
   function addFish(fish) {
     if (!fish.id || !fish.name || (fish.price === undefined || fish.price === "")) return { ok:false, msg:"Provide id,name,price" };
     if (data.fishes.find((f) => f.id === fish.id)) return { ok:false, msg:"Fish id exists" };
