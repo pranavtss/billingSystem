@@ -67,14 +67,24 @@ export default function User({ data, addPurchase }) {
 
       <div className="max-w-md mx-auto mt-6 bg-white p-4 rounded-xl shadow">
         <h4 className="font-semibold mb-2">Available Fishes</h4>
-        <ul className="text-sm space-y-1">
-          {data.fishes.map((f) => (
-            <li key={f.id} className="flex justify-between border-b py-1 last:border-none">
-              <span>{f.name}</span>
-              <span className="font-medium text-indigo-700">₹ {f.price}</span>
-            </li>
-          ))}
-        </ul>
+        <table className="w-full text-sm border rounded">
+          <thead>
+            <tr className="bg-slate-100">
+              <th className="py-1 px-2 text-left border-r">Fish ID</th>
+              <th className="py-1 px-2 text-left border-r">Name</th>
+              <th className="py-1 px-2 text-left">Price/kg</th>
+            </tr>
+          </thead>
+          <tbody>
+            {data.fishes.map((f) => (
+              <tr key={f.id} className="border-b">
+                <td className="py-1 px-2 border-r">{f.id}</td>
+                <td className="py-1 px-2 border-r">{f.name}</td>
+                <td className="py-1 px-2 font-medium text-indigo-700">₹ {f.price}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );

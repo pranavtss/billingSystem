@@ -18,7 +18,7 @@ export default function SearchBarWithSuggestions({ label, value, onChange, place
   };
 
   const handleSelect = (item) => {
-    onChange(item.label); // show label in input
+    onChange(item.value); // pass only fish id to parent
     setSuggestions([]);
   };
 
