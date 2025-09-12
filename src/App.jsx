@@ -101,7 +101,7 @@ export default function App() {
   return { ok:true };
   }
 
-  // Edit fish price by id or name
+  // Edit fish rate by id or name
   function editFishPrice(identifier, price) {
     if (!identifier || price === undefined || price === "") return { ok:false, msg:"Provide identifier & price" };
     const fishes = data.fishes.map((f) => {
