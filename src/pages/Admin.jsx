@@ -30,8 +30,9 @@ export default function Admin({
   const [search, setSearch] = useState("");
   const [fishIdentifier, setFishIdentifier] = useState("");
   const [priceInput, setPriceInput] = useState("");
-  const [newFish, setNewFish] = useState({ id: "", name: "", price: "" })
+  const [newFish, setNewFish] = useState({ id: "", name: "", price: "" });
 
+  // ------------ HANDLERS ------------
   function handleAddUser() {
     const res = addUser({ ...newUser, role: "user" });
     if (!res.ok) return alert(res.msg);
@@ -52,7 +53,7 @@ export default function Admin({
   }
 
   function handleEditFishPrice() {
-    if (!fishIdentifier || priceInput === "") return alert("Enter fish id/name and price");
+    if (!fishIdentifier || priceInput === "") return alert("Enter fish ID/name and price");
     const ident = fishIdentifier.includes(" - ") ? fishIdentifier.split(" - ")[0] : fishIdentifier;
     const res = editFishPrice(ident, priceInput);
     if (!res.ok) return alert(res.msg);
@@ -67,58 +68,90 @@ export default function Admin({
   }
 
   const filteredCustomers = search
-    ? data.customers.filter((c) => c.name.toLowerCase().includes(search.toLowerCase()) || c.id.toLowerCase().includes(search.toLowerCase()))
+    ? data.customers.filter(
+        (c) =>
+          c.name.toLowerCase().includes(search.toLowerCase()) ||
+          c.id.toLowerCase().includes(search.toLowerCase())
+      )
     : data.customers;
 
+  // ------------ UI ------------
   return (
     <div className="min-h-screen p-4 sm:p-6 bg-slate-50">
+      {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
         <h2 className="text-2xl font-bold text-gray-800">
-          Dashboard {data.users.find((u) => u.id === localStorage.getItem("currentUser"))?.name || localStorage.getItem("currentUser") || "Admin"}
+          Dashboard —{" "}
+          {data.users.find((u) => u.id === localStorage.getItem("currentUser"))?.name ||
+            localStorage.getItem("currentUser") ||
+            "Admin"}
         </h2>
         <div className="flex gap-2">
-          <button onClick={() => navigate("/history")} className="px-3 py-1 bg-slate-200 rounded hover:bg-slate-300">
-            History Page
+          <button
+            onClick={() => navigate("/history")}
+            className="px-3 py-1 bg-slate-200 rounded hover:bg-slate-300"
+          >
+            📜 History Page
           </button>
           <Logout />
         </div>
       </div>
 
-  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-6 w-full">
-        <CreateUserContainer
-          newUser={newUser}
-          setNewUser={setNewUser}
-          handleAddUser={handleAddUser}
-          users={data.users}
-          deleteUser={deleteUser}
-        />
-  <CreateCustomerContainer
-          newCustomer={newCustomer}
-          setNewCustomer={setNewCustomer}
-          handleAddCustomer={handleAddCustomer}
-          navigate={navigate}
-        />
-        <EditFishPriceContainer
-          fishIdentifier={fishIdentifier}
-          setFishIdentifier={setFishIdentifier}
-          priceInput={priceInput}
-          setPriceInput={setPriceInput}
-          handleEditFishPrice={handleEditFishPrice}
-          fishes={data.fishes}
-          deleteFish={deleteFish}
-        />
-      </div>
-  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
-        <AddFishContainer
-          newFish={newFish}
-          setNewFish={setNewFish}
-          handleAddFish={handleAddFish}
-        />
-        <div></div>
-        <div>
-          <SearchBar value={search} onChange={setSearch} placeholder="Search customers by name or id..." />
-          <CustomerQueue customers={filteredCustomers} pending={data.pending} pendingTotal={pendingTotal}
-            onSubmit={(cid) => handleSubmitAndPrint(cid)}
+      {/* 🧩 Main Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {/* LEFT SIDE — All Containers */}
+        <div className="lg:col-span-3 flex flex-col gap-6">
+          {/* Fish management */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <AddFishContainer
+              newFish={newFish}
+              setNewFish={setNewFish}
+              handleAddFish={handleAddFish}
+            />
+            <EditFishPriceContainer
+              fishIdentifier={fishIdentifier}
+              setFishIdentifier={setFishIdentifier}
+              priceInput={priceInput}
+              setPriceInput={setPriceInput}
+              handleEditFishPrice={handleEditFishPrice}
+              fishes={data.fishes}
+              deleteFish={deleteFish}
+            />
+          </div>
+
+          {/* User & Customer management */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <CreateUserContainer
+              newUser={newUser}
+              setNewUser={setNewUser}
+              handleAddUser={handleAddUser}
+              users={data.users}
+              deleteUser={deleteUser}
+            />
+            <CreateCustomerContainer
+              newCustomer={newCustomer}
+              setNewCustomer={setNewCustomer}
+              handleAddCustomer={handleAddCustomer}
+              navigate={navigate}
+            />
+          </div>
+        </div>
+
+        {/* RIGHT SIDE — Customer Queue Sidebar */}
+<div className="bg-white rounded-xl shadow-lg p-4 border border-blue-200 sticky top-4 max-h-[85vh] overflow-x-hidden w-full">
+
+                  <h2 className="text-lg font-semibold mb-2">Customers Queue</h2>
+
+          <SearchBar
+            value={search}
+            onChange={setSearch}
+            placeholder="Search customers..."
+          />
+          <CustomerQueue
+            customers={filteredCustomers}
+            pending={data.pending}
+            pendingTotal={pendingTotal}
+            onSubmit={handleSubmitAndPrint}
             onDeleteCustomer={(id) => {
               if (window.confirm("Delete this bill for customer?")) {
                 const pending = { ...data.pending };
@@ -135,24 +168,29 @@ export default function Admin({
             setData={setData}
             data={data}
           />
-          <EditBillModal open={editBillOpen} bill={editBillCustomerId ? data.pending[editBillCustomerId] : null} fishes={data.fishes}
-            onSave={(updatedBill) => {
-              const pending = { ...data.pending };
-              pending[editBillCustomerId] = {
-                ...pending[editBillCustomerId],
-                items: updatedBill.items,
-              };
-              setData({ ...data, pending });
-              setEditBillOpen(false);
-              setEditBillCustomerId(null);
-            }}
-            onClose={() => {
-              setEditBillOpen(false);
-              setEditBillCustomerId(null);
-            }}
-          />
         </div>
       </div>
+
+      {/* Modal */}
+      <EditBillModal
+        open={editBillOpen}
+        bill={editBillCustomerId ? data.pending[editBillCustomerId] : null}
+        fishes={data.fishes}
+        onSave={(updatedBill) => {
+          const pending = { ...data.pending };
+          pending[editBillCustomerId] = {
+            ...pending[editBillCustomerId],
+            items: updatedBill.items,
+          };
+          setData({ ...data, pending });
+          setEditBillOpen(false);
+          setEditBillCustomerId(null);
+        }}
+        onClose={() => {
+          setEditBillOpen(false);
+          setEditBillCustomerId(null);
+        }}
+      />
     </div>
   );
 }
