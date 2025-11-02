@@ -34,10 +34,8 @@ export default function Admin({
   const [priceInput, setPriceInput] = useState("");
   const [boxPriceInput, setBoxPriceInput] = useState("");
   const [newFish, setNewFish] = useState({ id: "", name: "", price: "", unit: "kg", boxPrice: "" });
+  const [showQueue, setShowQueue] = useState(true);
 
-  // ------------ HANDLERS ------------
-
-  // Prefill price inputs when a fish is selected from the search box
   useEffect(() => {
     if (!fishIdentifier) {
       setPriceInput("");
@@ -74,7 +72,6 @@ export default function Admin({
   function handleEditFishPrice(priceVal, boxPriceVal) {
     if (!fishIdentifier || (priceVal === "" && boxPriceVal === "")) return alert("Enter fish ID/name and at least one price");
     const ident = fishIdentifier.includes(" - ") ? fishIdentifier.split(" - ")[0] : fishIdentifier;
-    // Use atomic update to avoid race conditions
     const res = editFishPrices ? editFishPrices(ident, priceVal, boxPriceVal) : editFishPrice && editFishPrice(ident, priceVal, 'both');
     if (!res || !res.ok) return alert(res ? res.msg : "Update failed");
     setFishIdentifier("");
@@ -85,7 +82,6 @@ export default function Admin({
   function handleSubmitAndPrint(customerId) {
     const res = submitPendingBill(customerId, null, false);
     if (!res.ok) return alert(res.msg);
-    // Removed user-facing alert to avoid intrusive popups; action succeeds silently
     console.debug("Submitted and moved to history", res.entry);
   }
 
@@ -97,10 +93,8 @@ export default function Admin({
       )
     : data.customers;
 
-  // ------------ UI ------------
   return (
     <div className="min-h-screen p-4 sm:p-6 bg-slate-50">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
         <h2 className="text-2xl font-bold text-gray-800">
           Dashboard —{" "}
@@ -119,11 +113,8 @@ export default function Admin({
         </div>
       </div>
 
-      {/* 🧩 Main Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* LEFT SIDE — All Containers */}
         <div className="lg:col-span-3 flex flex-col gap-6">
-          {/* Fish management */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <AddFishContainer
               newFish={newFish}
@@ -143,7 +134,6 @@ export default function Admin({
             />
           </div>
 
-          {/* User & Customer management */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <CreateUserContainer
               newUser={newUser}
@@ -161,8 +151,17 @@ export default function Admin({
           </div>
         </div>
 
-        {/* RIGHT SIDE — Customer Queue Sidebar */}
-        <div className="bg-white rounded-xl shadow-lg p-4 border border-blue-200 sticky top-4 max-h-[85vh] overflow-x-hidden w-full">
+        <div>
+          <div className="lg:hidden mb-3">
+            <button
+              onClick={() => setShowQueue((s) => !s)}
+              className="px-3 py-1 bg-slate-100 rounded hover:bg-slate-200"
+            >
+              {showQueue ? "Hide Customers Queue" : "Show Customers Queue"}
+            </button>
+          </div>
+
+          <div className={(showQueue ? "block" : "hidden") + " bg-white rounded-xl shadow-lg p-4 border border-blue-200 lg:sticky lg:top-4 max-h-[85vh] overflow-x-hidden w-full"}>
           <h2 className="text-lg font-semibold mb-2">Customers Queue</h2>
 
           <div className="mt-2">
@@ -176,13 +175,15 @@ export default function Admin({
               pending={data.pending}
               pendingTotal={pendingTotal}
               fishes={data.fishes}
+              data={data}
+              setData={setData}
               onSubmit={(cid) => handleSubmitAndPrint(cid)}
               onView={(cid) => { setEditBillCustomerId(cid); setEditBillOpen(true); }}
             />
           </div>
           </div>
+        </div>
 
-        {/* Modal */}
         <EditBillModal
         open={editBillOpen}
         bill={editBillCustomerId ? data.pending[editBillCustomerId] : null}

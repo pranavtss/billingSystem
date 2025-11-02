@@ -8,6 +8,8 @@ export default function CustomerQueue({
   pendingTotal,
   onSubmit,
   fishes = [],
+  data,
+  setData,
 }) {
   const [viewCustomerId, setViewCustomerId] = useState(null);
   const activeCustomers = customers.filter(
@@ -74,18 +76,20 @@ export default function CustomerQueue({
         fishes={fishes}
         total={viewCustomerId ? pendingTotal(viewCustomerId) : 0}
         onEditItem={(itemId, newPrice) => {
-          const bill = pending[viewCustomerId];
+          if (!setData || !data) return;
+          const bill = data.pending[viewCustomerId];
           if (!bill) return;
-          const items = bill.items.map((it) =>
-            it.id === itemId ? { ...it, price: newPrice } : it
-          );
-          pending[viewCustomerId].items = items;
+          const items = bill.items.map((it) => (it.id === itemId ? { ...it, price: newPrice } : it));
+          const newPending = { ...data.pending, [viewCustomerId]: { ...bill, items } };
+          setData({ ...data, pending: newPending });
         }}
         onDeleteItem={(itemId) => {
-          const bill = pending[viewCustomerId];
+          if (!setData || !data) return;
+          const bill = data.pending[viewCustomerId];
           if (!bill) return;
           const items = bill.items.filter((it) => it.id !== itemId);
-          pending[viewCustomerId].items = items;
+          const newPending = { ...data.pending, [viewCustomerId]: { ...bill, items } };
+          setData({ ...data, pending: newPending });
         }}
       />
     </div>
