@@ -16,8 +16,24 @@ export default function User({ data, addPurchase }) {
   function handleAdd() {
     // resolve fish id from either the legacy dropdown value (fishId) or the new search box (fishIdentifier)
     const resolvedFishId = fishId || fishIdentifier;
-    if (!customerId || !resolvedFishId || !qty) return alert("Fill customer, fish and qty");
-    const res = addPurchase({ userId, customerId, fishId: resolvedFishId, qty, unit });
+  if (!customerId || !resolvedFishId || qty === "") return alert("Fill customer, fish and qty");
+
+  // Validate quantity: must be a number > 0
+  const qtyNum = Number(String(qty).trim());
+  if (Number.isNaN(qtyNum) || qtyNum <= 0) return alert("Enter a valid quantity greater than 0");
+
+    // Normalize identifier (supports values like "id - name")
+    const ident = typeof resolvedFishId === 'string' && resolvedFishId.includes(' - ') ? resolvedFishId.split(' - ')[0] : resolvedFishId;
+    const fish = data.fishes.find((f) => String(f.id) === String(ident) || f.name.toLowerCase() === String(ident).toLowerCase());
+    if (!fish) return alert("Selected fish not found");
+
+    const priceVal = unit === 'kg' ? fish.price : fish.boxPrice;
+    // If price is 0 / missing for the chosen unit, notify and do not submit
+    if (priceVal === 0 || priceVal === "0" || priceVal === undefined || priceVal === null || priceVal === "") {
+      return alert("Selected fish not available in chosen unit");
+    }
+
+  const res = addPurchase({ userId, customerId, fishId: resolvedFishId, qty: qtyNum, unit });
     // clear both possible inputs
     setFishId("");
     setFishIdentifier("");
