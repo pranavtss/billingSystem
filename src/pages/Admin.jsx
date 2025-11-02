@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Logout from "../components/Logout";
+import Card from "../components/Card";
 import SearchBar from "../components/SearchBar";
 import CustomerQueue from "../components/CustomerQueue";
 import AddFishContainer from "../containers/AddFishContainer";
@@ -15,6 +16,7 @@ export default function Admin({
   addCustomer,
   addFish,
   editFishPrice,
+  editFishPrices,
   submitPendingBill,
   pendingTotal,
   deleteUser,
@@ -30,9 +32,26 @@ export default function Admin({
   const [search, setSearch] = useState("");
   const [fishIdentifier, setFishIdentifier] = useState("");
   const [priceInput, setPriceInput] = useState("");
-  const [newFish, setNewFish] = useState({ id: "", name: "", price: "" });
+  const [boxPriceInput, setBoxPriceInput] = useState("");
+  const [newFish, setNewFish] = useState({ id: "", name: "", price: "", unit: "kg", boxPrice: "" });
 
   // ------------ HANDLERS ------------
+
+  // Prefill price inputs when a fish is selected from the search box
+  useEffect(() => {
+    if (!fishIdentifier) {
+      setPriceInput("");
+      setBoxPriceInput("");
+      return;
+    }
+    const ident = fishIdentifier.includes(" - ") ? fishIdentifier.split(" - ")[0] : fishIdentifier;
+    const fish = data.fishes.find((f) => String(f.id) === String(ident) || f.name.toLowerCase() === String(ident).toLowerCase());
+    if (fish) {
+      setPriceInput(fish.price !== undefined && fish.price !== null ? String(fish.price) : "");
+      setBoxPriceInput(fish.boxPrice !== undefined && fish.boxPrice !== null ? String(fish.boxPrice) : "");
+    }
+  }, [fishIdentifier, data.fishes]);
+
   function handleAddUser() {
     const res = addUser({ ...newUser, role: "user" });
     if (!res.ok) return alert(res.msg);
@@ -49,22 +68,25 @@ export default function Admin({
   function handleAddFish() {
     const res = addFish(newFish);
     if (!res.ok) return alert(res.msg);
-    setNewFish({ id: "", name: "", price: "" });
+    setNewFish({ id: "", name: "", price: "", unit: "kg", boxPrice: "" });
   }
 
-  function handleEditFishPrice() {
-    if (!fishIdentifier || priceInput === "") return alert("Enter fish ID/name and price");
+  function handleEditFishPrice(priceVal, boxPriceVal) {
+    if (!fishIdentifier || (priceVal === "" && boxPriceVal === "")) return alert("Enter fish ID/name and at least one price");
     const ident = fishIdentifier.includes(" - ") ? fishIdentifier.split(" - ")[0] : fishIdentifier;
-    const res = editFishPrice(ident, priceInput);
-    if (!res.ok) return alert(res.msg);
+    // Use atomic update to avoid race conditions
+    const res = editFishPrices ? editFishPrices(ident, priceVal, boxPriceVal) : editFishPrice && editFishPrice(ident, priceVal, 'both');
+    if (!res || !res.ok) return alert(res ? res.msg : "Update failed");
     setFishIdentifier("");
     setPriceInput("");
+    setBoxPriceInput("");
   }
 
   function handleSubmitAndPrint(customerId) {
     const res = submitPendingBill(customerId, null, false);
     if (!res.ok) return alert(res.msg);
-    alert("Submitted and moved to history");
+    // Removed user-facing alert to avoid intrusive popups; action succeeds silently
+    console.debug("Submitted and moved to history", res.entry);
   }
 
   const filteredCustomers = search
@@ -113,6 +135,8 @@ export default function Admin({
               setFishIdentifier={setFishIdentifier}
               priceInput={priceInput}
               setPriceInput={setPriceInput}
+              boxPriceInput={boxPriceInput}
+              setBoxPriceInput={setBoxPriceInput}
               handleEditFishPrice={handleEditFishPrice}
               fishes={data.fishes}
               deleteFish={deleteFish}
@@ -138,41 +162,28 @@ export default function Admin({
         </div>
 
         {/* RIGHT SIDE — Customer Queue Sidebar */}
-<div className="bg-white rounded-xl shadow-lg p-4 border border-blue-200 sticky top-4 max-h-[85vh] overflow-x-hidden w-full">
+        <div className="bg-white rounded-xl shadow-lg p-4 border border-blue-200 sticky top-4 max-h-[85vh] overflow-x-hidden w-full">
+          <h2 className="text-lg font-semibold mb-2">Customers Queue</h2>
 
-                  <h2 className="text-lg font-semibold mb-2">Customers Queue</h2>
+          <div className="mt-2">
+            <SearchBar
+              value={search}
+              onChange={setSearch}
+              placeholder="Search customers by name or id..."
+            />
+            <CustomerQueue
+              customers={filteredCustomers}
+              pending={data.pending}
+              pendingTotal={pendingTotal}
+              fishes={data.fishes}
+              onSubmit={(cid) => handleSubmitAndPrint(cid)}
+              onView={(cid) => { setEditBillCustomerId(cid); setEditBillOpen(true); }}
+            />
+          </div>
+          </div>
 
-          <SearchBar
-            value={search}
-            onChange={setSearch}
-            placeholder="Search customers..."
-          />
-          <CustomerQueue
-            customers={filteredCustomers}
-            pending={data.pending}
-            pendingTotal={pendingTotal}
-            onSubmit={handleSubmitAndPrint}
-            onDeleteCustomer={(id) => {
-              if (window.confirm("Delete this bill for customer?")) {
-                const pending = { ...data.pending };
-                delete pending[id];
-                setData({ ...data, pending });
-              }
-            }}
-            onUpdateCustomer={(customer) => {
-              setEditBillCustomerId(customer.id);
-              setEditBillOpen(true);
-            }}
-            fishes={data.fishes}
-            users={data.users}
-            setData={setData}
-            data={data}
-          />
-        </div>
-      </div>
-
-      {/* Modal */}
-      <EditBillModal
+        {/* Modal */}
+        <EditBillModal
         open={editBillOpen}
         bill={editBillCustomerId ? data.pending[editBillCustomerId] : null}
         fishes={data.fishes}
@@ -191,6 +202,7 @@ export default function Admin({
           setEditBillCustomerId(null);
         }}
       />
-    </div>
+  </div>
+  </div>
   );
 }

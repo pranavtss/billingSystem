@@ -94,19 +94,51 @@ export default function App() {
 
   // Add fish
   function addFish(fish) {
-    if (!fish.id || !fish.name || (fish.price === undefined || fish.price === "")) return { ok:false, msg:"Provide id,name,price" };
+    if (!fish.id || !fish.name) return { ok:false, msg:"Provide id and name" };
     if (data.fishes.find((f) => f.id === fish.id)) return { ok:false, msg:"Fish id exists" };
-  const next = { ...data, fishes: [...data.fishes, { ...fish, price: Number(fish.price) }] };
-  setData(next);
-  saveData(next);
-  return { ok:true };
+    // If unit is kg, price per kg is required
+    const unit = fish.unit || 'kg';
+    if (unit === 'kg' && (fish.price === undefined || fish.price === "")) return { ok:false, msg:"Provide price per kg for kg unit" };
+    // default boxPrice to 0 when not provided
+    const boxPriceNum = fish.boxPrice === undefined || fish.boxPrice === "" ? 0 : Number(fish.boxPrice);
+    const priceNum = fish.price === undefined || fish.price === "" ? 0 : Number(fish.price);
+    const nextFish = { ...fish, unit, price: priceNum, boxPrice: boxPriceNum };
+    const next = { ...data, fishes: [...data.fishes, nextFish] };
+    setData(next);
+    saveData(next);
+    return { ok:true };
   }
 
   // Edit fish rate by id or name
-  function editFishPrice(identifier, price) {
+  function editFishPrice(identifier, price, unit = 'kg') {
     if (!identifier || price === undefined || price === "") return { ok:false, msg:"Provide identifier & price" };
     const fishes = data.fishes.map((f) => {
-      if (f.id === identifier || f.name.toLowerCase() === String(identifier).toLowerCase()) return { ...f, price: Number(price) };
+      if (f.id === identifier || f.name.toLowerCase() === String(identifier).toLowerCase()) {
+          if (unit === 'box') return { ...f, boxPrice: Number(price) };
+          if (unit === 'both') return { ...f, price: Number(price), boxPrice: Number(price) };
+          return { ...f, price: Number(price) };
+        }
+      return f;
+    });
+    setData({ ...data, fishes });
+    return { ok:true };
+  }
+
+  // Edit both kg and box prices in one atomic update
+  function editFishPrices(identifier, kgPrice, boxPrice) {
+    if (!identifier) return { ok:false, msg: "Provide identifier" };
+    // Allow empty strings to mean "leave unchanged"; convert provided values
+    const hasKg = kgPrice !== undefined && String(kgPrice) !== "";
+    const hasBox = boxPrice !== undefined && String(boxPrice) !== "";
+    if (!hasKg && !hasBox) return { ok:false, msg: "Provide at least one price" };
+    const fishes = data.fishes.map((f) => {
+      if (f.id === identifier || f.name.toLowerCase() === String(identifier).toLowerCase()) {
+        return {
+          ...f,
+          price: hasKg ? Number(kgPrice) : f.price,
+          boxPrice: hasBox ? Number(boxPrice) : (f.boxPrice === undefined ? 0 : f.boxPrice)
+        };
+      }
       return f;
     });
     setData({ ...data, fishes });
@@ -114,7 +146,7 @@ export default function App() {
   }
 
   // User adds a purchase -> goes into pending[customerId] (multiple items allowed)
-  function addPurchase({ userId, customerId, fishId, qty, priceOverride }) {
+  function addPurchase({ userId, customerId, fishId, qty, unit = 'kg', priceOverride }) {
     if (!userId || !customerId || !fishId || !qty) return { ok:false, msg:"Provide user,customer,fish,qty" };
     // Try to find fish by id (string/number), then by name (case-insensitive), and trim whitespace
     const fishKey = String(fishId).trim();
@@ -127,10 +159,19 @@ export default function App() {
       fish = data.fishes.find((f) => Number(f.id) === Number(fishKey));
     }
     if (!fish) return { ok:false, msg:"Fish not found" };
-    const price = priceOverride !== undefined && priceOverride !== "" ? Number(priceOverride) : Number(fish.price);
+    let price;
+    if (priceOverride !== undefined && priceOverride !== "") {
+      price = Number(priceOverride);
+    } else {
+      if (unit === 'box') {
+        price = Number(fish.boxPrice === undefined || fish.boxPrice === null ? 0 : fish.boxPrice);
+      } else {
+        price = Number(fish.price === undefined || fish.price === null ? 0 : fish.price);
+      }
+    }
     const pending = { ...data.pending };
     if (!pending[customerId]) pending[customerId] = { customerId, items: [] };
-    pending[customerId].items.push({ id: Date.now().toString(), userId, fishId, qty: Number(qty), price });
+  pending[customerId].items.push({ id: Date.now().toString(), userId, fishId, qty: Number(qty), price, unit });
     setData({ ...data, pending });
     return { ok:true };
   }
@@ -175,6 +216,7 @@ export default function App() {
             addCustomer={addCustomer}
             addFish={addFish}
             editFishPrice={editFishPrice}
+            editFishPrices={editFishPrices}
             addPurchase={addPurchase}
             submitPendingBill={submitPendingBill}
             pendingTotal={pendingTotal}
