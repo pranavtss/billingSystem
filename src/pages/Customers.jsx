@@ -4,24 +4,27 @@ import EditCustomerModal from '../components/EditCustomerModal';
 import { DeleteButton, EditButton } from '../components/ActionButton';
 import SearchBar from '../components/SearchBar';
 
-function Customers({data}) {
+function Customers({ data }) {
   const navigate = useNavigate();
+  const [search, setSearch] = useState("");
+  const [customerList, setCustomerList] = useState(() => (data.customers || []));
+
+  const sortedCustomers = [...customerList].sort((a, b) => String(a.id).localeCompare(String(b.id)));
+  const filteredCustomers = sortedCustomers.filter(
+    (customer) =>
+      customer.name.toLowerCase().includes(search.toLowerCase()) ||
+      customer.phone.toLowerCase().includes(search.toLowerCase()) ||
+      String(customer.id).includes(search)
+  );
+
+  function handleDeleteCustomer(id) {
+    if (!window.confirm('Delete this customer?')) return;
+    setCustomerList((prev) => prev.filter((c) => c.id !== id));
+    if (data.deleteCustomer) data.deleteCustomer(id);
+  }
+
   const [editOpen, setEditOpen] = useState(false);
   const [editCustomer, setEditCustomer] = useState(null);
-  const [search, setSearch] = useState("");
-  const filteredCustomers = [...data.customers]
-    .sort((a, b) => String(a.id).localeCompare(String(b.id)))
-    .filter(
-      (customer) =>
-        customer.name.toLowerCase().includes(search.toLowerCase()) ||
-        customer.phone.toLowerCase().includes(search.toLowerCase()) ||
-        String(customer.id).includes(search)
-    );
-  function handleDeleteCustomer(id) {
-    if (window.confirm('Delete this customer?')) {
-      if (data.deleteCustomer) data.deleteCustomer(id);
-    }
-  }
 
   function handleEditCustomer(customer) {
     setEditCustomer(customer);
@@ -30,58 +33,60 @@ function Customers({data}) {
 
   function handleSaveCustomer(updated) {
     if (data.editCustomer) data.editCustomer(updated);
+    setCustomerList((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
     setEditOpen(false);
     setEditCustomer(null);
   }
 
   return (
-    <div className='p-6 ml-2'>
-      <h1 className="text-2xl font-bold mb-4 text-center ">All Customers</h1>
-      <div className='max-w-[600px] w-[600px] ml-[30px]'>
-      <SearchBar
-        value={search}
-        onChange={setSearch}
-        placeholder="Search by name, phone, or ID" 
-        
-      />
-      </div>
-      {(filteredCustomers.length === 0) ? <p>No customers found.</p> :
-      <table className="min-w-full bg-white">
-        <thead>
-          <tr>
-            <th className="py-2 px-4 border-b border-r text-center">Customer ID</th>
-            <th className="py-2 px-4 border-b border-r text-center">Customer Name</th>
-            <th className='py-2 px-4 border-b border-r text-center'>Phone No</th>
-            <th className='py-2 px-4 border-b text-center'>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {filteredCustomers.map((customer) => (
-            <tr key={customer.id}>
-              <td className="py-2 px-4 border-b border-r text-center">{customer.id}</td>
-              <td className="py-2 px-4 border-b border-r text-center">{customer.name}</td>
-              <td className="py-2 px-4 border-b border-r text-center">{customer.phone}</td>
-              <td className="py-2 px-4 border-b text-center flex justify-center gap-2">
-                <button
-                  className="bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600 transition"
-                  onClick={() => navigate(`/history?customerId=${customer.id}`)}
-                >
-                  View
-                </button>
-                <EditButton onClick={() => handleEditCustomer(customer)} />
-                <DeleteButton onClick={() => handleDeleteCustomer(customer.id)} />
-              </td>
+    <div className="min-h-screen p-6 bg-slate-50 flex justify-center items-start">
+      <div className="w-[1000px]">
+        <h2 className="text-2xl font-bold mb-4">All Customers</h2>
+        <SearchBar
+          value={search}
+          onChange={setSearch}
+          placeholder="Search by name, phone, or ID"
+        />
+
+        <table className="min-w-full bg-white border rounded">
+          <thead>
+            <tr className="bg-slate-100">
+              <th className="py-2 px-4 border-b border-r text-left">Customer ID</th>
+              <th className="py-2 px-4 border-b border-r text-left">Name</th>
+              <th className="py-2 px-4 border-b text-left">Phone</th>
+              <th className="py-2 px-4 border-b text-left">Actions</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
-    }
-    <EditCustomerModal
-      open={editOpen}
-      customer={editCustomer}
-      onSave={handleSaveCustomer}
-      onClose={() => { setEditOpen(false); setEditCustomer(null); }}
-    />
+          </thead>
+          <tbody>
+            {filteredCustomers.map((customer) => (
+              <tr key={customer.id}>
+                <td className="py-2 px-4 border-b border-r">{customer.id}</td>
+                <td className="py-2 px-4 border-b border-r">{customer.name}</td>
+                <td className="py-2 px-4 border-b">{customer.phone}</td>
+                <td className="py-2 px-4 border-b">
+                  <div className="flex items-center gap-2">
+                    <button
+                      className="bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600 transition"
+                      onClick={() => navigate(`/history?customerId=${customer.id}`)}
+                    >
+                      View
+                    </button>
+                    <EditButton onClick={() => handleEditCustomer(customer)} />
+                    <DeleteButton onClick={() => handleDeleteCustomer(customer.id)} />
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <EditCustomerModal
+        open={editOpen}
+        customer={editCustomer}
+        onSave={handleSaveCustomer}
+        onClose={() => { setEditOpen(false); setEditCustomer(null); }}
+      />
     </div>
   )
 }
