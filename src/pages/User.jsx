@@ -3,46 +3,67 @@ import Logout from "../components/Logout";
 //import { useNavigate } from "react-router-dom";
 import SearchBarForUpdate from "../components/SearchBarForUpdate";
 
-export default function User({ data, addPurchase }) {
+export default function User({ data }) {
 
   const [userId] = useState(localStorage.getItem("currentUser") || "user");
   const [fishIdentifier, setFishIdentifier] = useState("");
   const [customerId, setCustomerId] = useState("");
-  const [fishId, setFishId] = useState("");
   const [qty, setQty] = useState("");
   const [unit, setUnit] = useState('kg');
-
+  const [customerList, setCustomerList] = useState([]);
   
-  function handleAdd() {
-    // resolve fish id from either the legacy dropdown value (fishId) or the new search box (fishIdentifier)
-    const resolvedFishId = fishId || fishIdentifier;
-  if (!customerId || !resolvedFishId || qty === "") return alert("Fill customer, fish and qty");
-
-  // Validate quantity: must be a number > 0
-  const qtyNum = Number(String(qty).trim());
-  if (Number.isNaN(qtyNum) || qtyNum <= 0) return alert("Enter a valid quantity greater than 0");
-
-    // Normalize identifier (supports values like "id - name")
-    const ident = typeof resolvedFishId === 'string' && resolvedFishId.includes(' - ') ? resolvedFishId.split(' - ')[0] : resolvedFishId;
-    const fish = data.fishes.find((f) => String(f.id) === String(ident) || f.name.toLowerCase() === String(ident).toLowerCase());
-    if (!fish) return alert("Selected fish not found");
-
-    const priceVal = unit === 'kg' ? fish.price : fish.boxPrice;
-    // If price is 0 / missing for the chosen unit, notify and do not submit
-    if (priceVal === 0 || priceVal === "0" || priceVal === undefined || priceVal === null || priceVal === "") {
-      return alert("Selected fish not available in chosen unit");
+  React.useEffect(() =>{
+    async function fetchCustomers(){
+      const res = await fetch("http://localhost:5000/admin?type=customer", {
+        method:"GET",
+        headers:{"Content-Type":"application/json"}
+      })
+      const data = await res.json();
+      console.log("Fetched Data  :" , data)
+      if(Array.isArray(data)){
+        setCustomerList(data);
+      }
+      if(Array.isArray(data.data)){
+        setCustomerList(data.data);
+      }
+      else{
+        alert("Unexpected Format");
+      }
     }
+    fetchCustomers();
+  },[])
 
-  const res = addPurchase({ userId, customerId, fishId: resolvedFishId, qty: qtyNum, unit });
-    // clear both possible inputs
-    setFishId("");
-    setFishIdentifier("");
-    if (!res.ok) return alert(res.msg || "Failed");
-    setQty("");
-    setUnit('kg');
-    // Removed alert popup; keep a console message for debug
-    console.debug("Added to pending for customer", customerId, "fish", resolvedFishId, "unit", unit);
+
+  async function handleAdd() {
+    try{
+      const res = await fetch("http://localhost:5000/user", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("token")}`
+        },
+        body: JSON.stringify({
+          customerID: customerId,
+          fishID: fishIdentifier,
+          quantity: Number(qty),
+          unit: unit
+        })
+      });
+      const result = await res.json();
+      if(result && result.message === "Purchase recorded successfully") {
+        alert("Added to pending successfully");
+        setQty("");
+        setFishIdentifier("");
+        setCustomerId("");
+      } else {
+        alert(result.message || "Failed to add to pending");
+      }
+    }catch(error){
+      console.log("Error adding purchase:", error);
+      return alert("An error occurred while adding the purchase.");
+    }
   }
+
 
   return (
     <div className="min-h-screen p-6 bg-slate-50">
@@ -56,9 +77,9 @@ export default function User({ data, addPurchase }) {
         <div className="max-w-md w-full bg-white p-4 rounded-xl shadow flex flex-col gap-4">
           <h3 className="font-semibold mb-2">Add Purchase (pending)</h3>
           <SearchBarForUpdate
-            options={data.customers.map((f) => ({
-              value: `${f.id}`,
-              label: `${f.id} - ${f.name}`,
+            options={customerList.map((c) => ({
+              value: `${c.customerID}`,
+              label: `${c.customerID} - ${c.customername}`,
             }))}
             value={customerId}
             onChange={setCustomerId}
@@ -66,8 +87,8 @@ export default function User({ data, addPurchase }) {
           />
           <SearchBarForUpdate
             options={data.fishes.map((f) => ({
-              value: `${f.id}`,
-              label: `${f.id} - ${f.name}${(f.price !== undefined && f.price !== null) || (f.boxPrice !== undefined && f.boxPrice !== null) ? ` (${f.price ? `₹${f.price}/kg` : ''}${f.price && f.boxPrice ? ' • ' : ''}${f.boxPrice ? `₹${f.boxPrice}/box` : ''})` : ''}`,
+              value: `${f.fishID}`,
+              label: `${f.fishID} - ${f.fishName}${(f.kgPrice !== undefined && f.kgPrice !== null) || (f.boxPrice !== undefined && f.boxPrice !== null) ? ` (${f.kgPrice ? `₹${f.kgPrice}/kg` : ''}${f.kgPrice && f.boxPrice ? ' • ' : ''}${f.boxPrice ? `₹${f.boxPrice}/box` : ''})` : ''}`,
             }))}
             value={fishIdentifier}
             onChange={setFishIdentifier}
@@ -75,15 +96,12 @@ export default function User({ data, addPurchase }) {
           />
           <div className="flex gap-2">
             <input
-              placeholder={`Quantity (${unit})`}
+              placeholder={`Quantity`}
               className="flex-1 border p-2 mb-2 rounded"
               value={qty}
               onChange={(e) => setQty(e.target.value)}
             />
-            <select className="w-28 border p-2 mb-2 rounded" value={unit} onChange={e => setUnit(e.target.value)}>
-              <option value="kg">kg</option>
-              <option value="box">box</option>
-            </select>
+            <input className="w-28 border p-2 mb-2 rounded" value={unit} onChange={e => setUnit(e.target.value)} />
           </div>
           <button
             className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700"
@@ -104,13 +122,13 @@ export default function User({ data, addPurchase }) {
             </thead>
             <tbody>
               {[...data.fishes]
-                .sort((a, b) => String(a.id).localeCompare(String(b.id)))
+                .sort((a, b) => String(a.fishID).localeCompare(String(b.fishID)))
                 .map((f) => (
-                  <tr key={f.id} className="border-b">
-                    <td className="py-1 px-2 border-r">{f.id}</td>
-                    <td className="py-1 px-2 border-r">{f.name}</td>
+                  <tr key={f.fishID} className="border-b">
+                    <td className="py-1 px-2 border-r">{f.fishID}</td>
+                    <td className="py-1 px-2 border-r">{f.fishName}</td>
                     <td className="py-1 px-2 font-medium text-indigo-700">
-                      {f.price !== undefined && f.price !== null ? <div>₹ {f.price}/kg</div> : null}
+                      {f.kgPrice !== undefined && f.kgPrice !== null ? <div>₹ {f.kgPrice}/kg</div> : null}
                       {f.boxPrice !== undefined && f.boxPrice !== null ? <div>₹ {f.boxPrice}/box</div> : null}
                     </td>
                   </tr>
