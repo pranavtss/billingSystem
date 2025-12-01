@@ -1,24 +1,36 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-export default function Login({ users }) {
+export default function Login() {
   const [id, setId] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
 
-  function handleLogin() {
-    // Find user by id and password
-    const user = users.find(u => u.id === id && u.password === password);
-    if (user) {
-      localStorage.setItem("role", user.role);
-      localStorage.setItem("currentUser", user.id);
-      if (user.role === "admin") {
+  async function handleLogin() {
+    try{
+      const res = await fetch("http://localhost:5000/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          userID:id,
+          userpassword:password
+        })
+      });
+      const data = await res.json();
+      if(data.message === "Login successful" && data.role === "admin"){
         navigate("/admin");
-      } else {
+      }
+      else if (data.message === "Login successful" && data.role === "user"){
         navigate("/user");
       }
-    } else {
-      alert("Invalid credentials");
+      else{
+        return alert("Invalid Credentials");
+      }
+    }
+    catch(err){
+      console.log(err + "Error in Login");
     }
   }
 

@@ -1,7 +1,6 @@
-import { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Logout from "../components/Logout";
-import Card from "../components/Card";
 import SearchBar from "../components/SearchBar";
 import CustomerQueue from "../components/CustomerQueue";
 import AddFishContainer from "../containers/AddFishContainer";
@@ -12,11 +11,6 @@ import EditFishPriceContainer from "../containers/EditFishPriceContainer";
 
 export default function Admin({
   data,
-  addUser,
-  addCustomer,
-  addFish,
-  editFishPrice,
-  editFishPrices,
   submitPendingBill,
   pendingTotal,
   deleteUser,
@@ -33,56 +27,150 @@ export default function Admin({
   const [fishIdentifier, setFishIdentifier] = useState("");
   const [priceInput, setPriceInput] = useState("");
   const [boxPriceInput, setBoxPriceInput] = useState("");
-  const [newFish, setNewFish] = useState({ id: "", name: "", price: "", unit: "kg", boxPrice: "" });
-  const [showQueue, setShowQueue] = useState(true);
+  // keep shape consistent with AddFishContainer and backend fields
+  const [newFish, setNewFish] = useState({ fishID: "", fishName: "", fishunit: "", fishPrice: "", boxPrice: "" });
+  const [fishesList, setFishesList] = useState([]);
 
-  useEffect(() => {
-    if (!fishIdentifier) {
+  // ------------ HANDLERS ------------
+  React.useEffect(() =>{
+    async function fetchFishes(){
+      try{
+        const res = await fetch("http://localhost:5000/admin?type=fish");
+        const data = await res.json();
+        if(data.ok){
+          setFishesList(data.data);
+        }
+      }
+      catch(err){
+        console.log(err);
+      }
+    }
+    fetchFishes();
+  },[]);
+  async function handleAddUser() {
+    try{
+      const res = await fetch("http://localhost:5000/admin", {
+        method: "POST",
+        headers: {"Content-Type" : "application/json"},
+        body: JSON.stringify({
+          type: "user",
+          userID : newUser.id,
+          username: newUser.name,
+          userpassword: newUser.password,
+          role:"user"
+        })
+      });
+      const data = await res.json();
+      if(!res.ok) return alert(data.message || "Failed to add user");
+      setNewUser({id:"", name:"",password:""});
+
+    }
+    catch(err){
+      console.log(err);
+    }
+  }
+
+  async function handleAddCustomer() {
+    try{
+      const res = await fetch("http://localhost:5000/admin", {
+        method:"POST",
+        headers:{"Content-Type" : "application/json"},
+        body: JSON.stringify({
+          type:"customer",
+          customerID: newCustomer.id,
+          customername:newCustomer.name,
+          customerphone:newCustomer.phone,
+        })
+      });
+      const data = await res.json();
+      if(!res.ok) return alert(data.message || "Failed to add customer");
+      setNewCustomer({id:"",name:"",phone:""});
+      navigate(0);
+    }
+    catch(err){
+      console.log(err);
+    }
+  }
+
+  async function handleAddFish() {
+    try{
+      // basic validation
+      if (!newFish.fishID || !newFish.fishName) {
+        return alert("Provide Fish ID and Name");
+      }
+      const unit = String(newFish.fishunit || "").trim().toLowerCase();
+      if (!unit || (unit !== "kg" && unit !== "box")) {
+        console.log(unit);
+        return alert('Unit must be "kg" or "box"');
+      }
+      const priceVal = unit === "kg" ? newFish.fishPrice : newFish.boxPrice;
+
+      if (priceVal === undefined || priceVal === "") {
+        return alert('Provide price for the selected unit');
+      }
+
+      const res = await fetch("http://localhost:5000/admin", {
+        method : "POST",
+        headers:{"Content-Type" : "application/json"},
+        body:JSON.stringify({
+          type:"addfish",
+          fishID: newFish.fishID,
+          fishName: newFish.fishName,
+          fishunit: newFish.fishunit,
+          kgPrice: newFish.fishunit === 'kg' ? Number(newFish.fishPrice) : 0,
+          boxPrice: newFish.fishunit === 'box' ? Number(newFish.boxPrice) : 0,
+        })
+      })
+      const data = await res.json();
+      if(!res.ok) return alert(data.msg || data.message || "Failed to add fish");
+      setNewFish({ fishID:"", fishName:"", fishunit:"", fishPrice:"", boxPrice: ""});
+      navigate(0);
+    }
+    catch(err){
+      console.log(err);
+    }
+  }
+
+  async function handleEditFishPrice(fishID, newprice, fishunit) {
+    try {
+      // validate parameters passed from the container
+      if (!fishID || newprice === undefined || newprice === "" || !fishunit) {
+        return alert("Fish ID, unit and new price are required");
+      }
+
+      const response = await fetch("http://localhost:5000/admin", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          type: "editfish",
+          fishID,
+          fishunit,
+          newprice: Number(newprice),
+        }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        return alert(data.message || "Failed to edit fish price");
+      }
+      alert(data.message);
+      setFishIdentifier("");
       setPriceInput("");
       setBoxPriceInput("");
-      return;
+      navigate(0);
+
+    } catch (error) {
+      console.error("Error updating fish:", error);
+      alert("Network error while updating fish price");
     }
-    const ident = fishIdentifier.includes(" - ") ? fishIdentifier.split(" - ")[0] : fishIdentifier;
-    const fish = data.fishes.find((f) => String(f.id) === String(ident) || f.name.toLowerCase() === String(ident).toLowerCase());
-    if (fish) {
-      setPriceInput(fish.price !== undefined && fish.price !== null ? String(fish.price) : "");
-      setBoxPriceInput(fish.boxPrice !== undefined && fish.boxPrice !== null ? String(fish.boxPrice) : "");
-    }
-  }, [fishIdentifier, data.fishes]);
-
-  function handleAddUser() {
-    const res = addUser({ ...newUser, role: "user" });
-    if (!res.ok) return alert(res.msg);
-    setNewUser({ id: "", name: "", password: "" });
-  }
-
-  function handleAddCustomer() {
-    if (!newCustomer.phone) return alert("Phone number is required");
-    const res = addCustomer(newCustomer);
-    if (!res.ok) return alert(res.msg);
-    setNewCustomer({ id: "", name: "", phone: "" });
-  }
-
-  function handleAddFish() {
-    const res = addFish(newFish);
-    if (!res.ok) return alert(res.msg);
-    setNewFish({ id: "", name: "", price: "", unit: "kg", boxPrice: "" });
-  }
-
-  function handleEditFishPrice(priceVal, boxPriceVal) {
-    if (!fishIdentifier || (priceVal === "" && boxPriceVal === "")) return alert("Enter fish ID/name and at least one price");
-    const ident = fishIdentifier.includes(" - ") ? fishIdentifier.split(" - ")[0] : fishIdentifier;
-    const res = editFishPrices ? editFishPrices(ident, priceVal, boxPriceVal) : editFishPrice && editFishPrice(ident, priceVal, 'both');
-    if (!res || !res.ok) return alert(res ? res.msg : "Update failed");
-    setFishIdentifier("");
-    setPriceInput("");
-    setBoxPriceInput("");
   }
 
   function handleSubmitAndPrint(customerId) {
     const res = submitPendingBill(customerId, null, false);
     if (!res.ok) return alert(res.msg);
-    console.debug("Submitted and moved to history", res.entry);
+    alert("Submitted and moved to history");
   }
 
   const filteredCustomers = search
@@ -93,8 +181,10 @@ export default function Admin({
       )
     : data.customers;
 
+  // ------------ UI ------------
   return (
     <div className="min-h-screen p-4 sm:p-6 bg-slate-50">
+      {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
         <h2 className="text-2xl font-bold text-gray-800">
           Dashboard —{" "}
@@ -113,8 +203,11 @@ export default function Admin({
         </div>
       </div>
 
+      {/* 🧩 Main Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {/* LEFT SIDE — All Containers */}
         <div className="lg:col-span-3 flex flex-col gap-6">
+          {/* Fish management */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <AddFishContainer
               newFish={newFish}
@@ -129,11 +222,13 @@ export default function Admin({
               boxPriceInput={boxPriceInput}
               setBoxPriceInput={setBoxPriceInput}
               handleEditFishPrice={handleEditFishPrice}
-              fishes={data.fishes}
               deleteFish={deleteFish}
+              fishesList={fishesList}
+              setFishesList={setFishesList}
             />
           </div>
 
+          {/* User & Customer management */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <CreateUserContainer
               newUser={newUser}
@@ -151,40 +246,42 @@ export default function Admin({
           </div>
         </div>
 
-        <div>
-          <div className="lg:hidden mb-3">
-            <button
-              onClick={() => setShowQueue((s) => !s)}
-              className="px-3 py-1 bg-slate-100 rounded hover:bg-slate-200"
-            >
-              {showQueue ? "Hide Customers Queue" : "Show Customers Queue"}
-            </button>
-          </div>
+        {/* RIGHT SIDE — Customer Queue Sidebar */}
+<div className="bg-white rounded-xl shadow-lg p-4 border border-blue-200 sticky top-4 max-h-[85vh] overflow-x-hidden w-full">
 
-          <div className={(showQueue ? "block" : "hidden") + " bg-white rounded-xl shadow-lg p-4 border border-blue-200 lg:sticky lg:top-4 max-h-[85vh] overflow-x-hidden w-full"}>
-          <h2 className="text-lg font-semibold mb-2">Customers Queue</h2>
+                  <h2 className="text-lg font-semibold mb-2">Customers Queue</h2>
 
-          <div className="mt-2">
-            <SearchBar
-              value={search}
-              onChange={setSearch}
-              placeholder="Search customers by name or id..."
-            />
-            <CustomerQueue
-              customers={filteredCustomers}
-              pending={data.pending}
-              pendingTotal={pendingTotal}
-              fishes={data.fishes}
-              data={data}
-              setData={setData}
-              onSubmit={(cid) => handleSubmitAndPrint(cid)}
-              onView={(cid) => { setEditBillCustomerId(cid); setEditBillOpen(true); }}
-            />
-          </div>
-          </div>
+          <SearchBar
+            value={search}
+            onChange={setSearch}
+            placeholder="Search customers..."
+          />
+          <CustomerQueue
+            customers={filteredCustomers}
+            pending={data.pending}
+            pendingTotal={pendingTotal}
+            onSubmit={handleSubmitAndPrint}
+            onDeleteCustomer={(id) => {
+              if (window.confirm("Delete this bill for customer?")) {
+                const pending = { ...data.pending };
+                delete pending[id];
+                setData({ ...data, pending });
+              }
+            }}
+            onUpdateCustomer={(customer) => {
+              setEditBillCustomerId(customer.id);
+              setEditBillOpen(true);
+            }}
+            fishes={data.fishes}
+            users={data.users}
+            setData={setData}
+            data={data}
+          />
         </div>
+      </div>
 
-        <EditBillModal
+      {/* Modal */}
+      <EditBillModal
         open={editBillOpen}
         bill={editBillCustomerId ? data.pending[editBillCustomerId] : null}
         fishes={data.fishes}
@@ -203,7 +300,6 @@ export default function Admin({
           setEditBillCustomerId(null);
         }}
       />
-  </div>
-  </div>
+    </div>
   );
 }

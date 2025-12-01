@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useState,useEffect } from "react";
 import CustomerBillModal from "./CustomerBillModal";
 import SearchBar from "./SearchBar";
 
 export default function CustomerQueue({
   customers,
-  pending,
+  pending={},
   pendingTotal,
   onSubmit,
   fishes = [],
@@ -12,28 +12,49 @@ export default function CustomerQueue({
   setData,
 }) {
   const [viewCustomerId, setViewCustomerId] = useState(null);
-  const activeCustomers = customers.filter(
-    (c) => pending[c.id] && pending[c.id].items && pending[c.id].items.length > 0
-  );
+  const [customerList, setCustomerList] = useState([]);
+
+  useEffect(() => {
+    async function fetchCustomers() {
+      try {
+        const res = await fetch("http://localhost:5000/admin?type=purchase", {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+        });
+
+        const result = await res.json();
+        console.log("Fetched Data:", result);
+
+        if (result.ok && Array.isArray(result.data)) {
+          setCustomerList(result.data);
+        } else {
+          setCustomerList([]);
+        }
+      } catch (err) {
+        console.error("Error fetching customers:", err);
+        alert("Error fetching customers");
+      }
+    }
+    fetchCustomers();
+  }, []);
 
   return (
-  <div className="w-full">
+    <div className="w-full">
       <div className="w-full flex flex-col items-center">
-
         <div className="grid grid-cols-1 gap-4 w-full">
-          {activeCustomers.length === 0 ? (
+          {customerList.length === 0 ? (
             <div className="text-gray-500 text-center">No active customers</div>
           ) : (
-            activeCustomers.map((customer) => {
-              const total = pendingTotal(customer.id);
+            customerList.map((customer) => {
+              const total = pendingTotal(customer.customerID);
               return (
                 <div
-                  key={customer.id}
+                  key={customer.customerID}
                   className="bg-white shadow-xl rounded-2xl p-4 flex flex-col justify-between items-start transition-transform hover:scale-[1.01] min-h-[180px] w-full border border-blue-100"
                 >
                   <div className="flex justify-between items-center w-full mb-2">
                     <span className="font-bold text-lg text-blue-900 truncate max-w-[60%]">
-                      {customer.name}
+                      {customer.customername || `Customer ${customer.customerID}`}
                     </span>
                     <span className="px-2 py-1 rounded text-xs font-bold bg-green-100 text-green-800 shadow">
                       Active
@@ -41,23 +62,23 @@ export default function CustomerQueue({
                   </div>
 
                   <div className="text-base text-gray-700 mb-1 font-medium">
-                    📞 {customer.phone}
+                    📞 {customer.customerphone || "N/A"}
                   </div>
 
                   <div className="text-lg text-blue-700 font-extrabold mb-2">
-                    Bill: ₹{total.toFixed(2)}
+                    Bill: ₹{(Number.isFinite(total) ? total : 0).toFixed(2)}
                   </div>
 
                   <div className="flex gap-2 mt-auto w-full">
                     <button
                       className="flex-1 px-2 py-2 bg-indigo-600 text-white rounded-lg text-sm font-semibold hover:bg-indigo-700 transition"
-                      onClick={() => setViewCustomerId(customer.id)}
+                      onClick={() => setViewCustomerId(customer.customerID)}
                     >
                       View
                     </button>
                     <button
                       className="flex-1 px-2 py-2 bg-green-600 text-white rounded-lg text-sm font-semibold hover:bg-green-700 transition"
-                      onClick={() => onSubmit(customer.id)}
+                      onClick={() => onSubmit(customer.customerID)}
                     >
                       Submit
                     </button>

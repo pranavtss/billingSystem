@@ -5,8 +5,6 @@ export default function CreateUserContainer({
   newUser,
   setNewUser,
   handleAddUser,
-  users,
-  deleteUser,
 }) {
   const navigate = useNavigate();
   return (

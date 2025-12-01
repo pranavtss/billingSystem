@@ -7,142 +7,241 @@ import User from "./pages/User";
 import History from "./pages/History";
 import Customers from "./pages/Customers";
 
-const STORAGE_KEY = "fishshop_data_v3";
-
-const defaultData = {
-  users: [
-    { id: "admin", name: "Administrator", role: "admin", password: "admin123" }
-    // admin creates other users
-  ],
-  customers: [],
-  fishes: [
-    { id: "f1", name: "Rohu", price: 160 },
-    { id: "f2", name: "Catla", price: 180 },
-    { id: "f3", name: "Tilapia", price: 140 }
-  ],
-  pending: {}, // pending[customerId] = { customerId, items: [{id, userId, fishId, qty, price}] }
-  history: [] // array of { id, customerId, customerName, dateISO, items: [{fishId, fishName, qty, price}] }
-};
-
-function loadData() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return JSON.parse(raw);
-  } catch (e) {console.log(e);}
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(defaultData));
-  return JSON.parse(JSON.stringify(defaultData));
-}
-
-function saveData(data) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-}
-
 export default function App() {
-  const [data, setData] = useState(loadData);
+  // App keeps minimal local-only state (pending bills and history).
+  // Users, customers and fishes are fetched from backend and CRUD operations
+  // are performed against the server (server is the source of truth).
+  const [data, setData] = useState({ users: [], customers: [], fishes: [], pending: {}, history: [] });
 
+  // Fetch core lists from backend on mount
   useEffect(() => {
-    saveData(data);
-  }, [data]);
+    async function fetchAll() {
+      try {
+        const [usersRes, customersRes, fishesRes] = await Promise.all([
+          fetch("http://localhost:5000/admin?type=user"),
+          fetch("http://localhost:5000/admin?type=customer"),
+          fetch("http://localhost:5000/admin?type=fish"),
+        ]);
+        const usersJson = await usersRes.json();
+        const customersJson = await customersRes.json();
+        const fishesJson = await fishesRes.json();
+        setData((d) => ({
+          ...d,
+          users: usersJson.ok ? usersJson.data : [],
+          customers: customersJson.ok ? customersJson.data : [],
+          fishes: fishesJson.ok ? fishesJson.data : [],
+        }));
+      } catch (err) {
+        console.error("Failed to fetch initial data:", err);
+      }
+    }
+    fetchAll();
+  }, []);
 
   // --- Data operations (passed to pages) ---
   // Add user (admin-only)
-  function addUser(user) {
-    if (!user.id || !user.name || !user.password) return { ok: false, msg: "Provide id,name,password" };
-    if (data.users.find((u) => u.id === user.id)) return { ok: false, msg: "User exists" };
-    const next = { ...data, users: [...data.users, { ...user, role: "user" }] };
-    setData(next);
-    return { ok: true };
+  // CRUD for users/customers/fishes now performed by backend. The App exposes
+  // thin wrappers that call the server and refresh local list state.
+  async function refreshLists() {
+    try {
+      const [usersRes, customersRes, fishesRes] = await Promise.all([
+        fetch("http://localhost:5000/admin?type=user"),
+        fetch("http://localhost:5000/admin?type=customer"),
+        fetch("http://localhost:5000/admin?type=fish"),
+      ]);
+      const usersJson = await usersRes.json();
+      const customersJson = await customersRes.json();
+      const fishesJson = await fishesRes.json();
+      setData((d) => ({
+        ...d,
+        users: usersJson.ok ? usersJson.data : d.users,
+        customers: customersJson.ok ? customersJson.data : d.customers,
+        fishes: fishesJson.ok ? fishesJson.data : d.fishes,
+      }));
+    } catch (err) {
+      console.error("refreshLists error:", err);
+    }
   }
 
-  // Delete user
-  function deleteUser(userId) {
-    if (userId === "admin") return { ok: false, msg: "Cannot delete admin" };
-    const users = data.users.filter(u => u.id !== userId);
-    setData({ ...data, users });
-    return { ok: true };
+  async function addUser(user) {
+    try {
+      const res = await fetch("http://localhost:5000/admin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "user",
+          userID: user.id,
+          username: user.name,
+          userpassword: user.password
+        }),
+      });
+      const j = await res.json();
+      if (!res.ok)
+        return { ok: false, msg: j.message || j.msg || "Failed to add user" };
+      await refreshLists();
+      return { ok: true };
+    }
+    catch (err) {
+      console.error(err); return { ok: false, msg: err.message };
+    }
   }
 
-  // Add customer
-  function addCustomer(customer) {
-    if (!customer.id || !customer.name) return { ok: false, msg: "Provide id,name" };
-    if (data.customers.find((c) => c.id === customer.id)) return { ok: false, msg: "Customer exists" };
-    const next = { ...data, customers: [...data.customers, customer] };
-    setData(next);
-    return { ok: true };
-  }
-
-  // Delete customer
-  function deleteCustomer(customerId) {
-    const customers = data.customers.filter(c => c.id !== customerId);
-    setData({ ...data, customers });
-    return { ok: true };
-  }
-
-  // Edit customer
-  function editCustomer(updated) {
-    const customers = data.customers.map(c => c.id === updated.id ? { ...c, ...updated } : c);
-    setData({ ...data, customers });
-    return { ok: true };
-  }
-
-  // Delete fish
-  function deleteFish(fishId) {
-    const fishes = data.fishes.filter(f => f.id !== fishId);
-    setData({ ...data, fishes });
-    return { ok: true };
-  }
-
-  // Add fish
-  function addFish(fish) {
-    if (!fish.id || !fish.name) return { ok:false, msg:"Provide id and name" };
-    if (data.fishes.find((f) => f.id === fish.id)) return { ok:false, msg:"Fish id exists" };
-    // If unit is kg, price per kg is required
-    const unit = fish.unit || 'kg';
-    if (unit === 'kg' && (fish.price === undefined || fish.price === "")) return { ok:false, msg:"Provide price per kg for kg unit" };
-    // default boxPrice to 0 when not provided
-    const boxPriceNum = fish.boxPrice === undefined || fish.boxPrice === "" ? 0 : Number(fish.boxPrice);
-    const priceNum = fish.price === undefined || fish.price === "" ? 0 : Number(fish.price);
-    const nextFish = { ...fish, unit, price: priceNum, boxPrice: boxPriceNum };
-    const next = { ...data, fishes: [...data.fishes, nextFish] };
-    setData(next);
-    saveData(next);
-    return { ok:true };
-  }
-
-  // Edit fish rate by id or name
-  function editFishPrice(identifier, price, unit = 'kg') {
-    if (!identifier || price === undefined || price === "") return { ok:false, msg:"Provide identifier & price" };
-    const fishes = data.fishes.map((f) => {
-      if (f.id === identifier || f.name.toLowerCase() === String(identifier).toLowerCase()) {
-          if (unit === 'box') return { ...f, boxPrice: Number(price) };
-          if (unit === 'both') return { ...f, price: Number(price), boxPrice: Number(price) };
-          return { ...f, price: Number(price) };
-        }
-      return f;
-    });
-    setData({ ...data, fishes });
-    return { ok:true };
-  }
-
-  // Edit both kg and box prices in one atomic update
-  function editFishPrices(identifier, kgPrice, boxPrice) {
-    if (!identifier) return { ok:false, msg: "Provide identifier" };
-    // Allow empty strings to mean "leave unchanged"; convert provided values
-    const hasKg = kgPrice !== undefined && String(kgPrice) !== "";
-    const hasBox = boxPrice !== undefined && String(boxPrice) !== "";
-    if (!hasKg && !hasBox) return { ok:false, msg: "Provide at least one price" };
-    const fishes = data.fishes.map((f) => {
-      if (f.id === identifier || f.name.toLowerCase() === String(identifier).toLowerCase()) {
-        return {
-          ...f,
-          price: hasKg ? Number(kgPrice) : f.price,
-          boxPrice: hasBox ? Number(boxPrice) : (f.boxPrice === undefined ? 0 : f.boxPrice)
-        };
+  async function deleteUser(userId) {
+    try {
+      const res = await fetch("http://localhost:5000/admin", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: "deleteuser", userID: userId }),
+      });
+      const j = await res.json();
+      if (!res.ok){
+        return { ok: false, msg: j.message || "Failed to delete user" };
       }
-      return f;
-    });
-    setData({ ...data, fishes });
-    return { ok:true };
+      await refreshLists();
+      return { ok: true };
+    }
+    catch (err) {
+      console.error(err); return { ok: false, msg: err.message };
+    }
+  }
+
+  async function addCustomer(customer) {
+    try {
+      const res = await fetch("http://localhost:5000/admin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "customer",
+          customerID: customer.id,
+          customername: customer.name,
+          customerphone: customer.phone
+        }),
+      });
+      const j = await res.json();
+      if (!res.ok) return { ok: false, msg: j.message || j.msg || "Failed to add customer" };
+      await refreshLists();
+      return { ok: true };
+    } catch (err) { console.error(err); return { ok: false, msg: err.message }; }
+  }
+
+  async function deleteCustomer(customerId) {
+    try {
+      const res = await fetch("http://localhost:5000/admin", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "deletecustomer",
+          customerID: customerId
+        }),
+      });
+      const j = await res.json();
+      if (!res.ok) return { ok: false, msg: j.message || j.msg || "Failed to delete customer" };
+      await refreshLists();
+      return { ok: true };
+    }
+    catch (err) {
+      console.error(err); return { ok: false, msg: err.message };
+    }
+  }
+
+  async function editCustomer(updated) {
+    try {
+      const res = await fetch("http://localhost:5000/admin", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "editcustomer",
+          customerID: updated.id || updated.customerID,
+          customername: updated.name || updated.customername,
+          customerphone: updated.phone || updated.customerphone
+        }),
+      });
+      const j = await res.json();
+      if (!res.ok) return { ok: false, msg: j.message || j.msg || "Failed to edit customer" };
+      await refreshLists();
+      return { ok: true };
+    }
+    catch (err) {
+      console.error(err); return { ok: false, msg: err.message };
+    }
+  }
+
+  async function addFish(fish) {
+    try {
+      const payload = {
+        type: "addfish",
+        fishID: fish.fishID || fish.id,
+        fishName: fish.fishName || fish.name,
+        fishunit: fish.fishunit || fish.unit || 'kg',
+        kgPrice: fish.kgPrice ?? (fish.kgPrice === 0 ? 0 : fish.kgPrice),
+        boxPrice: fish.boxPrice ?? (fish.boxPrice === 0 ? 0 : fish.boxPrice),
+      };
+      const res = await fetch("http://localhost:5000/admin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const j = await res.json();
+      if (!res.ok) return { ok: false, msg: j.msg || j.message || "Failed to add fish" };
+      await refreshLists();
+      return { ok: true };
+    }
+    catch (err) {
+      console.error(err); return { ok: false, msg: err.message };
+    }
+  }
+
+  async function deleteFish(fishId) {
+    try {
+      const res = await fetch("http://localhost:5000/admin", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "deletefish",
+          fishID: fishId
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) return { msg: data + "Failed to delete fish" };
+      await refreshLists();
+      return { ok: true };
+    }
+    catch (err) {
+      console.log(err); return { ok: false, msg: err.message };
+    }
+  }
+
+  async function editFishPrice(identifier, price, unit = 'kg') {
+    try {
+      const res = await fetch("http://localhost:5000/admin", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "editfish",
+          fishID: identifier,
+          fishunit: unit,
+          newprice: Number(price)
+        }),
+      });
+      const j = await res.json();
+      if (!res.ok) return { ok: false, msg: j.message || j.msg || "Failed to edit fish" };
+      await refreshLists();
+      return { ok: true };
+    }
+    catch (err) {
+      console.error(err); return { ok: false, msg: err.message };
+    }
+  }
+
+  async function editFishPrices(identifier, kgPrice, boxPrice) {
+    // For simplicity, call editFishPrice twice if both provided
+    if (kgPrice !== undefined && String(kgPrice) !== "") {
+      await editFishPrice(identifier, kgPrice, 'kg');
+    }
+    if (boxPrice !== undefined && String(boxPrice) !== "") {
+      await editFishPrice(identifier, boxPrice, 'box');
+    }
+    return { ok: true };
   }
 
   // User adds a purchase -> goes into pending[customerId] (multiple items allowed)
@@ -166,7 +265,7 @@ export default function App() {
       if (unit === 'box') {
         price = Number(fish.boxPrice === undefined || fish.boxPrice === null ? 0 : fish.boxPrice);
       } else {
-        price = Number(fish.price === undefined || fish.price === null ? 0 : fish.price);
+        price = Number(fish.kgPrice === undefined || fish.kgPrice === null ? 0 : fish.kgPrice);
       }
     }
     const pending = { ...data.pending };
