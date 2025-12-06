@@ -8,11 +8,11 @@ export default function PurchaseList({ pending, fishes, onRemove }) {
   return (
     <div>
       {pending.items.map((it) => {
-        const fish = fishes.find(f=>f.id===it.fishId) || { name: it.fishId };
+        const fish = fishes.find(f => String(f.fishID) === String(it.fishId) || String(f.id) === String(it.fishId)) || { name: it.fishId, fishName: it.fishId };
         return (
           <div key={it.id} className="flex justify-between items-center border p-2 rounded mb-2">
             <div>
-              <div className="font-medium">{fish.name} — {it.qty} kg</div>
+              <div className="font-medium">{fish.fishName || fish.name} — {it.qty} kg</div>
               <div className="text-xs text-gray-500">By: {it.userId} • Price: ₹{it.price}</div>
             </div>
             <div>

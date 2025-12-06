@@ -131,10 +131,10 @@ function Customers() {
             </tr>
           </thead>
           <tbody>
-            {customerList.length === 0 ? (
+            {filteredCustomers.length === 0 ? (
               <tr><td colSpan="4" className="text-center py-4">No customers found</td></tr>
             ) : (
-              customerList.map((customer) => (
+              filteredCustomers.map((customer) => (
                 <tr key={customer._id}>
                   <td className="py-2 px-4 border-b border-r">{customer.customerID}</td>
                   <td className="py-2 px-4 border-b border-r">{customer.customername}</td>

@@ -20,9 +20,14 @@ export default function Login() {
       });
       const data = await res.json();
       if(data.message === "Login successful" && data.role === "admin"){
+        // persist session info
+        if (data.token) localStorage.setItem("token", data.token);
+        localStorage.setItem("currentUser", id);
         navigate("/admin");
       }
       else if (data.message === "Login successful" && data.role === "user"){
+        if (data.token) localStorage.setItem("token", data.token);
+        localStorage.setItem("currentUser", id);
         navigate("/user");
       }
       else{

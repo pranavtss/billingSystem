@@ -21,7 +21,7 @@ export default function EditBillModal({ open, bill, fishes, onSave, onClose }) {
         <div className="space-y-2">
           {items.map((it, idx) => (
             <div key={idx} className="flex gap-2 items-center">
-              <span className="w-32">{fishes.find(f => f.id === it.fishId)?.name || it.fishId}</span>
+              <span className="w-32">{fishes.find(f => String(f.fishID) === String(it.fishId) || String(f.id) === String(it.fishId))?.fishName || fishes.find(f => String(f.fishID) === String(it.fishId) || String(f.id) === String(it.fishId))?.name || it.fishId}</span>
               <input
                 type="number"
                 className="border p-1 rounded w-16"

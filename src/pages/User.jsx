@@ -12,30 +12,45 @@ export default function User({ data }) {
   const [unit, setUnit] = useState('kg');
   const [customerList, setCustomerList] = useState([]);
   
-  React.useEffect(() =>{
-    async function fetchCustomers(){
-      const res = await fetch("http://localhost:5000/admin?type=customer", {
-        method:"GET",
-        headers:{"Content-Type":"application/json"}
-      })
-      const data = await res.json();
-      console.log("Fetched Data  :" , data)
-      if(Array.isArray(data)){
-        setCustomerList(data);
-      }
-      if(Array.isArray(data.data)){
-        setCustomerList(data.data);
-      }
-      else{
-        alert("Unexpected Format");
+  React.useEffect(() => {
+    async function fetchCustomers() {
+      try {
+        const res = await fetch("http://localhost:5000/admin?type=customer", {
+          method: "GET",
+          headers: { "Content-Type": "application/json" }
+        });
+        const data = await res.json();
+        console.log("Fetched customers:", data);
+        if (Array.isArray(data)) {
+          setCustomerList(data);
+        } else if (Array.isArray(data.data)) {
+          setCustomerList(data.data);
+        } else {
+          console.warn("Unexpected customer response format:", data);
+        }
+      } catch (err) {
+        console.error("Failed to fetch customers:", err);
       }
     }
     fetchCustomers();
-  },[])
+  }, []);
 
 
   async function handleAdd() {
     try{
+      // Prefer the numeric `userID` from the users list; do NOT send `username`.
+      const foundUser = data?.users?.find(
+        (u) => String(u.userID) === String(userId) || String(u.username) === String(userId) || String(u.id) === String(userId) || String(u.name) === String(userId)
+      );
+      const submitUserId = foundUser ? (foundUser.userID ?? foundUser.id) : userId;
+      console.log("Submitting purchase for user ID:", submitUserId);
+
+      // client-side validation to avoid server 400s
+      if (!customerId) return alert("Please select a customer");
+      if (!fishIdentifier) return alert("Please select a fish");
+      if (!qty || Number(qty) <= 0) return alert("Enter a valid quantity");
+      if (!unit) return alert("Unit is required");
+
       const res = await fetch("http://localhost:5000/user", {
         method: "POST",
         headers: {
@@ -43,6 +58,7 @@ export default function User({ data }) {
           "Authorization": `Bearer ${localStorage.getItem("token")}`
         },
         body: JSON.stringify({
+          userID: (submitUserId),
           customerID: customerId,
           fishID: fishIdentifier,
           quantity: Number(qty),
@@ -69,7 +85,7 @@ export default function User({ data }) {
     <div className="min-h-screen p-6 bg-slate-50">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-bold text-gray-800">
-          User Dashboard — {data.users.find(u => u.id === userId)?.name || userId}
+          User Dashboard — {data?.users?.find(u => String(u.userID) === String(userId))?.username || userId}
         </h2>
         <Logout />
       </div>
