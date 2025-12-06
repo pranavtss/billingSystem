@@ -4,14 +4,22 @@ import SearchBar from "../components/SearchBar";
 import { useNavigate } from "react-router-dom";
 
 export default function History({ history, users }) {
+
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const params = new URLSearchParams(window.location.search);
   const customerId = params.get("customerId");
   const filtered = useMemo(()=> {
-    let list = history;
-    if (customerId) list = list.filter(h => h.customerId === customerId);
-    if (search) list = list.filter(h => h.customerName.toLowerCase().includes(search.toLowerCase()) || h.customerId.toLowerCase().includes(search.toLowerCase()));
+    let list = Array.isArray(history) ? history : [];
+    if (customerId) list = list.filter(h => String(h.customerID ?? h.customerId ?? "") === String(customerId));
+    if (search) {
+      const q = String(search).toLowerCase();
+      list = list.filter(h => {
+        const name = String(h.customername ?? h.customerName ?? "").toLowerCase();
+        const id = String(h.customerID ?? h.customerId ?? "").toLowerCase();
+        return name.includes(q) || id.includes(q);
+      });
+    }
     return list;
   }, [history, search, customerId]);
 

@@ -173,13 +173,15 @@ export default function Admin({
     alert("Submitted and moved to history");
   }
 
-  const filteredCustomers = search
-    ? data.customers.filter(
-        (c) =>
-          c.name.toLowerCase().includes(search.toLowerCase()) ||
-          c.id.toLowerCase().includes(search.toLowerCase())
-      )
-    : data.customers;
+  const filteredCustomers = (() => {
+    if (!search) return data.customers || [];
+    const q = String(search).toLowerCase();
+    return (data.customers || []).filter((c) => {
+      const name = String(c.customername ?? c.name ?? "").toLowerCase();
+      const id = String(c.customerID ?? c.id ?? "").toLowerCase();
+      return name.includes(q) || id.includes(q);
+    });
+  })();
 
   // ------------ UI ------------
   return (
@@ -188,9 +190,13 @@ export default function Admin({
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
         <h2 className="text-2xl font-bold text-gray-800">
           Dashboard —{" "}
-          {data.users.find((u) => u.id === localStorage.getItem("currentUser"))?.name ||
-            localStorage.getItem("currentUser") ||
-            "Admin"}
+          {data?.users?.find(
+            (u) =>
+              String(u.userID) === String(localStorage.getItem("currentUser")) ||
+              String(u.username) === String(localStorage.getItem("currentUser")) ||
+              String(u.id) === String(localStorage.getItem("currentUser")) ||
+              String(u.name) === String(localStorage.getItem("currentUser"))
+          )?.username || localStorage.getItem("currentUser") || "Admin"}
         </h2>
         <div className="flex gap-2">
           <button

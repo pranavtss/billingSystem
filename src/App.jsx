@@ -233,46 +233,33 @@ export default function App() {
     }
   }
 
-  async function editFishPrices(identifier, kgPrice, boxPrice) {
-    // For simplicity, call editFishPrice twice if both provided
-    if (kgPrice !== undefined && String(kgPrice) !== "") {
-      await editFishPrice(identifier, kgPrice, 'kg');
-    }
-    if (boxPrice !== undefined && String(boxPrice) !== "") {
-      await editFishPrice(identifier, boxPrice, 'box');
-    }
-    return { ok: true };
-  }
+
 
   // User adds a purchase -> goes into pending[customerId] (multiple items allowed)
-  function addPurchase({ userId, customerId, fishId, qty, unit = 'kg', priceOverride }) {
-    if (!userId || !customerId || !fishId || !qty) return { ok:false, msg:"Provide user,customer,fish,qty" };
-    // Try to find fish by id (string/number), then by name (case-insensitive), and trim whitespace
-    const fishKey = String(fishId).trim();
-    let fish = data.fishes.find((f) => String(f.id).trim() === fishKey);
-    if (!fish) {
-      fish = data.fishes.find((f) => f.name.toLowerCase().trim() === fishKey.toLowerCase());
-    }
-    if (!fish) {
-      // Try matching id as number if user entered numeric id
-      fish = data.fishes.find((f) => Number(f.id) === Number(fishKey));
-    }
-    if (!fish) return { ok:false, msg:"Fish not found" };
-    let price;
-    if (priceOverride !== undefined && priceOverride !== "") {
-      price = Number(priceOverride);
-    } else {
-      if (unit === 'box') {
-        price = Number(fish.boxPrice === undefined || fish.boxPrice === null ? 0 : fish.boxPrice);
-      } else {
-        price = Number(fish.kgPrice === undefined || fish.kgPrice === null ? 0 : fish.kgPrice);
+  async function addPurchase({ userId, customerId, fishId, qty, unit = 'kg' }) {
+    try{
+      const res = await fetch("http://localhost:5000/user", {
+        method: "POST",
+        headers:{"Content-Type" : "application/json"},
+        body: JSON.stringify({
+          userID: Number(userId),
+          customerID: customerId,
+          fishID: fishId,
+          quantity: Number(qty),
+          unit: unit
+        })
+      })
+      const data = await res.json();
+      if(res.ok && data.message === "Purchase recorded successfully"){
+        return { ok:true };
+      }
+      else{
+        return { ok:false, msg: data.message || "Failed to add purchase" };
       }
     }
-    const pending = { ...data.pending };
-    if (!pending[customerId]) pending[customerId] = { customerId, items: [] };
-  pending[customerId].items.push({ id: Date.now().toString(), userId, fishId, qty: Number(qty), price, unit });
-    setData({ ...data, pending });
-    return { ok:true };
+    catch(Err){
+      console.log(Err);
+    }
   }
 
   // Admin submits a pending bill -> moves to history and clears pending
@@ -295,6 +282,28 @@ export default function App() {
     setData({ ...data, pending, history });
     return { ok:true, entry };
   }
+  const [history, setHistory] = useState([]);
+  React.useEffect(() => {
+    async function fetchHistory() {
+      try{
+        const res = await fetch("http://localhost:5000/history" ,{
+          method:"GET",
+          headers:{"Content-Type":"application/json"}
+        })
+        const result = await res.json();
+        if (result.ok && Array.isArray(result.data)) {
+          setHistory(result.data);
+        } else {
+          setHistory([]);
+        }
+      }
+      catch(err){
+        console.log("error Getting History" , err);
+        setHistory([]);
+      }
+    }
+    fetchHistory();
+  },[]);
 
   // Get totals helper for UI
   function pendingTotal(customerId) {
@@ -315,7 +324,6 @@ export default function App() {
             addCustomer={addCustomer}
             addFish={addFish}
             editFishPrice={editFishPrice}
-            editFishPrices={editFishPrices}
             addPurchase={addPurchase}
             submitPendingBill={submitPendingBill}
             pendingTotal={pendingTotal}
@@ -327,7 +335,7 @@ export default function App() {
           <User data={data} addPurchase={addPurchase} />
         } />
   <Route path="/users" element={<ViewUsers users={data.users} deleteUser={deleteUser} />} />
-        <Route path="/history" element={<History history={data.history} users={data.users} />} />
+        <Route path="/history" element={<History history={history} users={data.users} />} />
         <Route path="/customers" element={<Customers data={{
           ...data,
           deleteCustomer,

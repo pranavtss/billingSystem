@@ -6,6 +6,7 @@ export default function Logout({ className = "", children }) {
   function handleLogout() {
     localStorage.removeItem("role");
     localStorage.removeItem("currentUser");
+    localStorage.removeItem("token");
     navigate("/");
   }
   return (
