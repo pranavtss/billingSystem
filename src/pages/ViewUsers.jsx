@@ -1,6 +1,7 @@
 import React, { useState,useEffect } from "react";
 import SearchBar from "../components/SearchBar";
-import { DeleteButton } from "../components/ActionButton";
+import ConfirmDeleteButton from "../components/ConfirmDeleteButton";
+import BackButton from "../components/BackButton";
 
 export default function ViewUsers() {
     const [search, setSearch] = useState("");
@@ -40,6 +41,7 @@ export default function ViewUsers() {
     );
 
     async function handleDeleteUser(id) {
+        if (!window.confirm("Delete this user?")) return;
         try{
             const res = await fetch("http://localhost:5000/admin", {
                 method:"DELETE",
@@ -52,7 +54,6 @@ export default function ViewUsers() {
             const data = await res.json();
             if(data.message === "User deleted successfully"){
                 setUserList(prev => prev.filter(u => u.userID !== id));
-                alert("User deleted successfully");
             }
             else{
                 alert("Failed to delete user: " + data.message);
@@ -67,7 +68,10 @@ export default function ViewUsers() {
     return (
         <div className="min-h-screen p-6 bg-slate-50 flex justify-center items-start">
             <div className="w-[1000px]">
-                <h2 className="text-2xl font-bold mb-4">All Users</h2>
+                <div className="flex justify-between items-center mb-4">
+                    <h2 className="text-2xl font-bold">All Users</h2>
+                    <BackButton />
+                </div>
                 <SearchBar
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
@@ -84,13 +88,13 @@ export default function ViewUsers() {
                     </thead>
                     <tbody>
                         {filteredUsers.map((user) => (
-                            <tr key={user.id}>
+                            <tr key={user.userID}>
                                 <td className="py-2 px-4 border-b border-r">{user.userID}</td>
                                 <td className="py-2 px-4 border-b border-r">{user.username}</td>
                                 <td className="py-2 px-4 border-b">
-                                    <DeleteButton
-                                        onClick={() => handleDeleteUser(user.userID)}
-                                        className="mx-1 hover:bg-red-100 transition"
+                                    <ConfirmDeleteButton
+                                        onConfirm={() => handleDeleteUser(user.userID)}
+                                        className="mx-1"
                                     />
                                 </td>
                             </tr>

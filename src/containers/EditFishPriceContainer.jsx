@@ -1,5 +1,6 @@
 import React from "react";
 import SearchBarForUpdate from "../components/SearchBarForUpdate";
+import ConfirmDeleteButton from "../components/ConfirmDeleteButton";
 
 export default function EditFishPriceContainer({
   fishIdentifier,
@@ -12,8 +13,6 @@ export default function EditFishPriceContainer({
   fishesList,
   setFishesList
 }) {
-  const [unit, setUnit] = React.useState("");
-
   // 🐟 Delete Fish Handler
   async function handleDelete(fishID) {
     try {
@@ -27,33 +26,27 @@ export default function EditFishPriceContainer({
       });
 
       const data = await res.json();
-      if (!res.ok) {
-        alert("Failed to delete fish: " + data.message);
-      } else {
-        alert(data.message || "Fish Deleted successfully");
-        // Update UI without refreshing
+      if (res.ok) {
         setFishesList((prev) => prev.filter((f) => f.fishID !== fishID));
+      } else {
+        console.error("Failed to delete fish:", data?.message || data?.msg || res.statusText);
       }
     } catch (err) {
       console.error("Error deleting fish:", err);
-      alert("Internal server error");
     }
   }
 
   return (
     <div className="bg-white rounded-xl shadow-2xl border-2 border-blue-300 p-6 w-full max-w-md mx-auto flex flex-col gap-3 h-[350px]">
-      <h3 className="font-bold mb-3 text-lg text-center">Edit Fish Price</h3>
+      <h3 className="font-bold mb-1 text-lg text-center">Edit Fish Price</h3>
 
       {/* 🔍 Search Field */}
       <SearchBarForUpdate
         options={fishesList.map((f) => {
-          const perKg = f.kgPrice ? `₹${f.kgPrice}/kg` : "";
-          const perBox = f.boxPrice ? `₹${f.boxPrice}/box` : "";
-          const priceLabel = [perKg, perBox].filter(Boolean).join(" | ");
-          return {
-            value: `${f.fishID}`,
-            label: `${f.fishID} - ${f.fishName}${priceLabel ? ` (${priceLabel})` : ""}`,
-          };
+          const kg = Number(f.kgPrice) || 0;
+          const box = Number(f.boxPrice) || 0;
+          const label = `${f.fishID} - ${f.fishName} (₹${kg}/kg - ₹${box}/box)`;
+          return { value: `${f.fishID}`, label };
         })}
         value={fishIdentifier}
         onChange={setFishIdentifier}
@@ -61,31 +54,28 @@ export default function EditFishPriceContainer({
       />
 
       {/* 🐟 Unit and Price Input */}
-      <div className="flex gap-2 mt-2 items-center">
-        <input
-          placeholder='Unit ("kg" or "box")'
-          className="w-28 border p-2 rounded"
-          value={unit}
-          onChange={(e) => setUnit(e.target.value.toLowerCase())}
-        />
-
-        {(unit === "kg" || !unit) && (
+      <div className="flex flex-col gap-2">
+        <div className="flex gap-2 items-center">
           <input
+            type="number"
             placeholder="Price per kg"
-            className="flex-1 border p-2 rounded"
+            className="flex-1 min-w-0 border p-2 rounded"
             value={priceInput}
             onChange={(e) => setPriceInput(e.target.value)}
+            min="0"
+            step="0.01"
           />
-        )}
-
-        {unit === "box" && (
           <input
-            placeholder="Box price"
-            className="flex-1 border p-2 rounded"
+            type="number"
+            placeholder="Price per box"
+            className="flex-1 min-w-0 border p-2 rounded"
             value={boxPriceInput}
             onChange={(e) => setBoxPriceInput(e.target.value)}
+            min="0"
+            step="0.01"
           />
-        )}
+        </div>
+        <p className="text-xs text-gray-500">You can update one or both prices; filling both updates them together.</p>
       </div>
 
       {/* 🧾 Update Button */}
@@ -94,36 +84,31 @@ export default function EditFishPriceContainer({
         onClick={() =>
           handleEditFishPrice(
             fishIdentifier,
-            unit === "box" ? boxPriceInput : priceInput,
-            unit
+            priceInput,
+            boxPriceInput
           )
         }
       >
-        {unit === "box" ? "Update Box Price" : "Update Kg Price"}
+        Update Prices
       </button>
 
       {/* 🐠 Fish List */}
-      <div className="overflow-y-auto max-h-48 h-[120px] mt-2">
-        <ul className="space-y-1 text-sm">
+      <div className="overflow-y-auto max-h-48 h-[120px] mt-2 pr-2 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-gray-100 [&::-webkit-scrollbar-track]:rounded-lg [&::-webkit-scrollbar-track]:ml-2 [&::-webkit-scrollbar-thumb]:bg-blue-400 [&::-webkit-scrollbar-thumb]:rounded-lg [&::-webkit-scrollbar-thumb]:hover:bg-blue-500">
+        <ul className="space-y-1 text-sm pr-1">
           {fishesList.map((f) => {
-            const perKg = f.kgPrice ? `₹${f.kgPrice}/kg` : null;
-            const perBox = f.boxPrice ? `₹${f.boxPrice}/box` : null;
-            const parts = [perKg, perBox].filter(Boolean).join(" • ");
+            const kg = Number(f.kgPrice) || 0;
+            const box = Number(f.boxPrice) || 0;
             return (
               <li
                 key={f.fishID}
                 className="flex justify-between items-center border-b pb-1"
               >
-                <span>
-                  {f.fishID} — {f.fishName}
-                  {parts ? ` (${parts})` : ""}
-                </span>
-                <button
-                  className="text-red-600 text-xs hover:underline"
-                  onClick={() => handleDelete(f.fishID)}
-                >
-                  Delete
-                </button>
+                <span>{`${f.fishID} - ${f.fishName} (₹${kg}/kg - ₹${box}/box)`}</span>
+                <ConfirmDeleteButton
+                  className="text-xs"
+                  label="Delete"
+                  onConfirm={() => handleDelete(f.fishID)}
+                />
               </li>
             );
           })}

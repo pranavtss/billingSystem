@@ -33,8 +33,13 @@ export default function EditCustomerModal({ open, customer, onSave, onClose }) {
         <input
           className="w-full border p-2 rounded mb-2"
           placeholder="Phone"
+          inputMode="numeric"
+          pattern="[0-9]*"
           value={form.customerphone}
-          onChange={e => setForm(prev => ({ ...prev, customerphone: e.target.value }))}
+          onChange={e => {
+            const digitsOnly = e.target.value.replace(/\D/g, "");
+            setForm(prev => ({ ...prev, customerphone: digitsOnly }));
+          }}
         />
 
         <div className="flex gap-2 mt-4 justify-end">

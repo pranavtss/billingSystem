@@ -4,10 +4,11 @@ import Logout from "../components/Logout";
 import SearchBar from "../components/SearchBar";
 import CustomerQueue from "../components/CustomerQueue";
 import AddFishContainer from "../containers/AddFishContainer";
+import EditFishPriceContainer from "../containers/EditFishPriceContainer";
 import EditBillModal from "../components/EditBillModal";
 import CreateUserContainer from "../containers/CreateUserContainer";
 import CreateCustomerContainer from "../containers/CreateCustomerContainer";
-import EditFishPriceContainer from "../containers/EditFishPriceContainer";
+import Toast from "../components/Toast";
 
 export default function Admin({
   data,
@@ -28,8 +29,10 @@ export default function Admin({
   const [priceInput, setPriceInput] = useState("");
   const [boxPriceInput, setBoxPriceInput] = useState("");
   // keep shape consistent with AddFishContainer and backend fields
-  const [newFish, setNewFish] = useState({ fishID: "", fishName: "", fishunit: "", fishPrice: "", boxPrice: "" });
+  const [newFish, setNewFish] = useState({ fishID: "", fishName: "", kgPrice: "", boxPrice: "" });
   const [fishesList, setFishesList] = useState([]);
+  const [toastMessage, setToastMessage] = useState("");
+  const showToast = (msg) => setToastMessage(msg);
 
   // ------------ HANDLERS ------------
   React.useEffect(() =>{
@@ -38,7 +41,13 @@ export default function Admin({
         const res = await fetch("http://localhost:5000/admin?type=fish");
         const data = await res.json();
         if(data.ok){
-          setFishesList(data.data);
+          // Sort fish list by fishID in ascending order
+          const sortedFishes = data.data.sort((a, b) => {
+            const idA = String(a.fishID).toLowerCase();
+            const idB = String(b.fishID).toLowerCase();
+            return idA.localeCompare(idB, undefined, { numeric: true });
+          });
+          setFishesList(sortedFishes);
         }
       }
       catch(err){
@@ -63,6 +72,7 @@ export default function Admin({
       const data = await res.json();
       if(!res.ok) return alert(data.message || "Failed to add user");
       setNewUser({id:"", name:"",password:""});
+      showToast("User added successfully");
 
     }
     catch(err){
@@ -85,7 +95,7 @@ export default function Admin({
       const data = await res.json();
       if(!res.ok) return alert(data.message || "Failed to add customer");
       setNewCustomer({id:"",name:"",phone:""});
-      navigate(0);
+      showToast("Customer added successfully");
     }
     catch(err){
       console.log(err);
@@ -94,76 +104,113 @@ export default function Admin({
 
   async function handleAddFish() {
     try{
+      console.log("newFish state:", JSON.stringify(newFish));
       // basic validation
-      if (!newFish.fishID || !newFish.fishName) {
-        return alert("Provide Fish ID and Name");
+      if (!newFish.fishID || !newFish.fishName || String(newFish.fishID).trim() === "" || String(newFish.fishName).trim() === "") {
+        return alert("Provide a valid Fish ID and Name");
       }
-      const unit = String(newFish.fishunit || "").trim().toLowerCase();
-      if (!unit || (unit !== "kg" && unit !== "box")) {
-        console.log(unit);
-        return alert('Unit must be "kg" or "box"');
-      }
-      const priceVal = unit === "kg" ? newFish.fishPrice : newFish.boxPrice;
-
-      if (priceVal === undefined || priceVal === "") {
-        return alert('Provide price for the selected unit');
+      
+      const kgPrice = newFish.kgPrice ? Number(newFish.kgPrice) : 0;
+      const boxPrice = newFish.boxPrice ? Number(newFish.boxPrice) : 0;
+      
+      if (kgPrice === 0 && boxPrice === 0) {
+        return alert("Provide at least one price (kg or box)");
       }
 
+      const payload = {
+        type:"addfish",
+        fishID: newFish.fishID,
+        fishName: newFish.fishName,
+        fishunit: kgPrice > 0 ? "kg" : "box",
+        kgPrice: kgPrice,
+        boxPrice: boxPrice,
+      };
+      console.log("Sending add fish payload:", JSON.stringify(payload));
       const res = await fetch("http://localhost:5000/admin", {
         method : "POST",
         headers:{"Content-Type" : "application/json"},
-        body:JSON.stringify({
-          type:"addfish",
-          fishID: newFish.fishID,
-          fishName: newFish.fishName,
-          fishunit: newFish.fishunit,
-          kgPrice: newFish.fishunit === 'kg' ? Number(newFish.fishPrice) : 0,
-          boxPrice: newFish.fishunit === 'box' ? Number(newFish.boxPrice) : 0,
-        })
+        body:JSON.stringify(payload)
       })
       const data = await res.json();
       if(!res.ok) return alert(data.msg || data.message || "Failed to add fish");
-      setNewFish({ fishID:"", fishName:"", fishunit:"", fishPrice:"", boxPrice: ""});
-      navigate(0);
+      
+      // Add new fish to local list and sort
+      if (data.fish) {
+        const updatedList = [...fishesList, data.fish].sort((a, b) => {
+          const idA = String(a.fishID).toLowerCase();
+          const idB = String(b.fishID).toLowerCase();
+          return idA.localeCompare(idB, undefined, { numeric: true });
+        });
+        setFishesList(updatedList);
+      }
+      
+      setNewFish({ fishID:"", fishName:"", kgPrice:"", boxPrice: ""});
+      showToast("Fish added successfully");
     }
     catch(err){
       console.log(err);
     }
   }
 
-  async function handleEditFishPrice(fishID, newprice, fishunit) {
+  async function handleEditFishPrice(identifier, newKgPrice, newBoxPrice) {
     try {
-      // validate parameters passed from the container
-      if (!fishID || newprice === undefined || newprice === "" || !fishunit) {
-        return alert("Fish ID, unit and new price are required");
+      // allow selection by id or name
+      const trimmed = (identifier || "").trim();
+      if (!trimmed) {
+        return alert("Select a fish by ID or name");
       }
 
-      const response = await fetch("http://localhost:5000/admin", {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          type: "editfish",
-          fishID,
-          fishunit,
-          newprice: Number(newprice),
-        }),
+      // resolve fish by ID first, then name match
+      const foundById = fishesList.find((f) => String(f.fishID) === trimmed);
+      const foundByName = fishesList.find((f) => String(f.fishName).toLowerCase() === trimmed.toLowerCase());
+      const targetFish = foundById || foundByName;
+      if (!targetFish) {
+        return alert("Fish not found");
+      }
+
+      const parsedKg = newKgPrice === "" ? null : Number(newKgPrice);
+      const parsedBox = newBoxPrice === "" ? null : Number(newBoxPrice);
+
+      if ((parsedKg !== null && Number.isNaN(parsedKg)) || (parsedBox !== null && Number.isNaN(parsedBox))) {
+        return alert("Enter valid numbers for prices");
+      }
+      if ((parsedKg !== null && parsedKg < 0) || (parsedBox !== null && parsedBox < 0)) {
+        return alert("Prices cannot be negative");
+      }
+      if (parsedKg === null && parsedBox === null) {
+        return alert("Provide at least one price (kg or box)");
+      }
+
+      const payload = {
+        type: "editfish",
+        fishID: targetFish.fishID,
+        fishName: targetFish.fishName,
+        kgPrice: parsedKg !== null ? parsedKg : targetFish.kgPrice,
+        boxPrice: parsedBox !== null ? parsedBox : targetFish.boxPrice,
+      };
+
+      const res = await fetch("http://localhost:5000/admin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
       });
 
-      const data = await response.json();
-      if (!response.ok) {
-        return alert(data.message || "Failed to edit fish price");
+      const data = await res.json();
+      if (!res.ok || data.ok === false) {
+        return alert(data.message || data.msg || "Failed to update fish");
       }
-      alert(data.message);
-      setFishIdentifier("");
+
+      // refresh list locally
+      if (data.data) {
+        setFishesList((prev) => prev.map((f) => (String(f.fishID) === String(data.data.fishID) ? data.data : f)));
+      }
+
       setPriceInput("");
       setBoxPriceInput("");
-      navigate(0);
-
-    } catch (error) {
-      console.error("Error updating fish:", error);
-      alert("Network error while updating fish price");
+      showToast("Fish prices updated");
+    } catch (err) {
+      console.log(err);
+      alert("Internal error updating fish");
     }
   }
 
@@ -186,9 +233,10 @@ export default function Admin({
   // ------------ UI ------------
   return (
     <div className="min-h-screen p-4 sm:p-6 bg-slate-50">
+      <Toast message={toastMessage} onClose={() => setToastMessage("")} position="top-center" />
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-        <h2 className="text-2xl font-bold text-gray-800">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 gap-3 sm:gap-4">
+        <h2 className="text-xl sm:text-2xl font-bold text-gray-800">
           Dashboard —{" "}
           {data?.users?.find(
             (u) =>
@@ -198,10 +246,10 @@ export default function Admin({
               String(u.name) === String(localStorage.getItem("currentUser"))
           )?.username || localStorage.getItem("currentUser") || "Admin"}
         </h2>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <button
             onClick={() => navigate("/history")}
-            className="px-3 py-1 bg-slate-200 rounded hover:bg-slate-300"
+            className="px-2 sm:px-3 py-1 text-sm sm:text-base bg-slate-200 rounded hover:bg-slate-300"
           >
             📜 History Page
           </button>
@@ -210,11 +258,11 @@ export default function Admin({
       </div>
 
       {/* 🧩 Main Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-4 gap-4 sm:gap-6">
         {/* LEFT SIDE — All Containers */}
-        <div className="lg:col-span-3 flex flex-col gap-6">
+        <div className="xl:col-span-3 flex flex-col gap-4 sm:gap-6">
           {/* Fish management */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
             <AddFishContainer
               newFish={newFish}
               setNewFish={setNewFish}
@@ -228,14 +276,13 @@ export default function Admin({
               boxPriceInput={boxPriceInput}
               setBoxPriceInput={setBoxPriceInput}
               handleEditFishPrice={handleEditFishPrice}
-              deleteFish={deleteFish}
               fishesList={fishesList}
               setFishesList={setFishesList}
             />
           </div>
 
           {/* User & Customer management */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
             <CreateUserContainer
               newUser={newUser}
               setNewUser={setNewUser}
@@ -253,9 +300,8 @@ export default function Admin({
         </div>
 
         {/* RIGHT SIDE — Customer Queue Sidebar */}
-<div className="bg-white rounded-xl shadow-lg p-4 border border-blue-200 sticky top-4 max-h-[85vh] overflow-x-hidden w-full">
-
-                  <h2 className="text-lg font-semibold mb-2">Customers Queue</h2>
+        <div className="bg-white rounded-xl shadow-lg p-3 sm:p-4 border border-blue-200 xl:sticky xl:top-4 max-h-[85vh] overflow-x-hidden w-full">
+          <h2 className="text-base sm:text-lg font-semibold mb-2">Customers Queue</h2>
 
           <SearchBar
             value={search}

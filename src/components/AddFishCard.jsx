@@ -4,9 +4,8 @@ export default function AddFishCard() {
   const [fish, setFish] = useState({
     fishID: "",
     fishName: "",
-    // use 'fishunit' to match other components and server field names
-    fishunit: "",
-    fishPrice: ""
+    kgPrice: "",
+    boxPrice: ""
   });
   async function handleAdd() {
     try {
@@ -14,11 +13,13 @@ export default function AddFishCard() {
       if (!fish.fishID || !fish.fishName) {
         return alert("Provide Fish ID and Name");
       }
-      const unit = String(fish.fishunit || "").trim().toLowerCase();
       
-      // Require unit to be either 'kg' or 'box' and require price
-      if (unit !== 'kg' && unit !== 'box') return alert('Unit must be exactly "kg" or "box"');
-      if (fish.fishPrice === undefined || fish.fishPrice === "") return alert('Provide price for the selected unit');
+      const kgPrice = fish.kgPrice ? Number(fish.kgPrice) : 0;
+      const boxPrice = fish.boxPrice ? Number(fish.boxPrice) : 0;
+      
+      if (kgPrice === 0 && boxPrice === 0) {
+        return alert("Provide at least one price (kg or box)");
+      }
 
       const res = await fetch("http://localhost:5000/admin", {
         method: "POST",
@@ -27,9 +28,9 @@ export default function AddFishCard() {
           type: "addfish",
           fishID: fish.fishID,
           fishName: fish.fishName,
-          fishunit: fish.fishunit || 'kg',
-          kgPrice: fish.fishunit === 'kg' ? Number(fish.fishPrice) : 0,
-          boxPrice: fish.fishunit === 'box' ? Number(fish.fishPrice) : 0,
+          fishunit: kgPrice > 0 ? "kg" : "box",
+          kgPrice: kgPrice,
+          boxPrice: boxPrice,
         }),
       });
 
@@ -40,7 +41,7 @@ export default function AddFishCard() {
       }
       alert(result.msg || "Fish added successfully!");
       // reset form
-      setFish({ fishID: "", fishName: "", fishunit: "", fishPrice: "" });
+      setFish({ fishID: "", fishName: "", kgPrice: "", boxPrice: "" });
     } catch (err) {
       console.error(err);
       alert("Error adding fish");
@@ -62,38 +63,27 @@ export default function AddFishCard() {
         value={fish.fishName}
         onChange={e => setFish(f => ({ ...f, fishName: e.target.value }))}
       />
-      <p>Unit should be either "kg" or "box" (type fully to show price field)</p>
-      <input
-        className="border p-2 rounded"
-        value={fish.fishunit}
-        onChange={(e) => setFish((f) => ({ ...f, fishunit: e.target.value }))}
-      />
-
-      {/* Show price input only when unit is exactly 'kg' or 'box' */}
-      {(() => {
-        const unit = String(fish.fishunit || "").trim().toLowerCase();
-        if (unit === 'kg') {
-          return (
-            <input
-              placeholder="Price per kg"
-              className="w-full border p-2 rounded focus:outline-blue-400"
-              value={fish.fishPrice}
-              onChange={e => setFish(f => ({ ...f, fishPrice: e.target.value }))}
-            />
-          );
-        }
-        if (unit === 'box') {
-          return (
-            <input
-              placeholder="Box price"
-              className="w-full border p-2 rounded focus:outline-blue-400"
-              value={fish.fishPrice}
-              onChange={e => setFish(f => ({ ...f, fishPrice: e.target.value }))}
-            />
-          );
-        }
-        return null;
-      })()}
+      <p className="text-sm text-gray-600">Enter either or both prices.</p>
+      <div className="flex gap-2">
+        <input
+          type="number"
+          placeholder="Price per kg"
+          className="w-full border p-2 rounded focus:outline-blue-400"
+          value={fish.kgPrice}
+          onChange={e => setFish(f => ({ ...f, kgPrice: e.target.value }))}
+          min="0"
+          step="0.01"
+        />
+        <input
+          type="number"
+          placeholder="Price per box"
+          className="w-full border p-2 rounded focus:outline-blue-400"
+          value={fish.boxPrice}
+          onChange={e => setFish(f => ({ ...f, boxPrice: e.target.value }))}
+          min="0"
+          step="0.01"
+        />
+      </div>
       <button
         className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700 transition"
         onClick={handleAdd}

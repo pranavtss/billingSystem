@@ -7,7 +7,7 @@ export default function Logout({ className = "", children }) {
     localStorage.removeItem("role");
     localStorage.removeItem("currentUser");
     localStorage.removeItem("token");
-    navigate("/");
+    navigate("/", { replace: true });
   }
   return (
     <button

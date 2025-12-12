@@ -1,10 +1,17 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 export default function Login() {
   const [id, setId] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
+  
+  // Clear any stale auth data when login page loads
+  useEffect(() => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("currentUser");
+    localStorage.removeItem("role");
+  }, []);
 
   async function handleLogin() {
     try{
@@ -23,12 +30,12 @@ export default function Login() {
         // persist session info
         if (data.token) localStorage.setItem("token", data.token);
         localStorage.setItem("currentUser", id);
-        navigate("/admin");
+        navigate("/admin", { replace: true });
       }
       else if (data.message === "Login successful" && data.role === "user"){
         if (data.token) localStorage.setItem("token", data.token);
         localStorage.setItem("currentUser", id);
-        navigate("/user");
+        navigate("/user", { replace: true });
       }
       else{
         return alert("Invalid Credentials");

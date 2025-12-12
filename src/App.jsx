@@ -1,11 +1,52 @@
 import React, { useEffect, useState } from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Login from "./pages/Login";
 import ViewUsers from "./pages/ViewUsers";
 import Admin from "./pages/Admin";
 import User from "./pages/User";
 import History from "./pages/History";
 import Customers from "./pages/Customers";
+
+// Protected Route wrapper - redirects to login if not authenticated
+function ProtectedRoute({ children }) {
+  const [isAuthenticated, setIsAuthenticated] = React.useState(false);
+  const [isChecking, setIsChecking] = React.useState(true);
+  
+  React.useEffect(() => {
+    const token = localStorage.getItem("token");
+    const currentUser = localStorage.getItem("currentUser");
+    
+    // Check authentication on mount and whenever storage changes
+    if (token && currentUser) {
+      setIsAuthenticated(true);
+    } else {
+      setIsAuthenticated(false);
+    }
+    setIsChecking(false);
+    
+    // Listen for storage changes (logout in another tab)
+    const handleStorageChange = (e) => {
+      if (e.key === "token" || e.key === "currentUser") {
+        const newToken = localStorage.getItem("token");
+        const newUser = localStorage.getItem("currentUser");
+        setIsAuthenticated(!!(newToken && newUser));
+      }
+    };
+    
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, []);
+  
+  if (isChecking) {
+    return null; // or a loading spinner
+  }
+  
+  if (!isAuthenticated) {
+    return <Navigate to="/" replace />;
+  }
+  
+  return children;
+}
 
 export default function App() {
   // App keeps minimal local-only state (pending bills and history).
@@ -147,7 +188,7 @@ export default function App() {
   async function editCustomer(updated) {
     try {
       const res = await fetch("http://localhost:5000/admin", {
-        method: "PATCH",
+        method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           type: "editcustomer",
@@ -317,30 +358,46 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Login users={data.users} />} />
         <Route path="/admin" element={
-          <Admin
-            data={data}
-            setData={setData}
-            addUser={addUser}
-            addCustomer={addCustomer}
-            addFish={addFish}
-            editFishPrice={editFishPrice}
-            addPurchase={addPurchase}
-            submitPendingBill={submitPendingBill}
-            pendingTotal={pendingTotal}
-            deleteUser={deleteUser}
-            deleteFish={deleteFish}
-          />
+          <ProtectedRoute>
+            <Admin
+              data={data}
+              setData={setData}
+              addUser={addUser}
+              addCustomer={addCustomer}
+              addFish={addFish}
+              editFishPrice={editFishPrice}
+              addPurchase={addPurchase}
+              submitPendingBill={submitPendingBill}
+              pendingTotal={pendingTotal}
+              deleteUser={deleteUser}
+              deleteFish={deleteFish}
+            />
+          </ProtectedRoute>
         } />
         <Route path="/user" element={
-          <User data={data} addPurchase={addPurchase} />
+          <ProtectedRoute>
+            <User data={data} addPurchase={addPurchase} />
+          </ProtectedRoute>
         } />
-  <Route path="/users" element={<ViewUsers users={data.users} deleteUser={deleteUser} />} />
-        <Route path="/history" element={<History history={history} users={data.users} />} />
-        <Route path="/customers" element={<Customers data={{
-          ...data,
-          deleteCustomer,
-          editCustomer
-        }} />} />
+        <Route path="/users" element={
+          <ProtectedRoute>
+            <ViewUsers users={data.users} deleteUser={deleteUser} />
+          </ProtectedRoute>
+        } />
+        <Route path="/history" element={
+          <ProtectedRoute>
+            <History history={history} users={data.users} />
+          </ProtectedRoute>
+        } />
+        <Route path="/customers" element={
+          <ProtectedRoute>
+            <Customers data={{
+              ...data,
+              deleteCustomer,
+              editCustomer
+            }} />
+          </ProtectedRoute>
+        } />
       </Routes>
     </BrowserRouter>
   );

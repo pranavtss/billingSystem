@@ -258,6 +258,7 @@ export default function CustomerQueue({ data, setData, pending, pendingTotal, fi
           setData(prev => ({ ...prev, pending: newPending }));
         }}
         onDeleteItem={itemId => {
+          if (!window.confirm("Delete this item?")) return;
           const bill = pending[viewCustomerId];
           if (!bill) return;
 

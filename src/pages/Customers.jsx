@@ -1,13 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import EditCustomerModal from '../components/EditCustomerModal';
-import { DeleteButton, EditButton } from '../components/ActionButton';
+import { EditButton } from '../components/ActionButton';
+import ConfirmDeleteButton from '../components/ConfirmDeleteButton';
 import SearchBar from '../components/SearchBar';
+import BackButton from '../components/BackButton';
+import Toast from '../components/Toast';
 
 function Customers() {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [customerList, setCustomerList] = useState([]);
+  const [toastMessage, setToastMessage] = useState("");
+  const showToast = (msg) => setToastMessage(msg);
 
   useEffect(() => {
     fetch("http://localhost:5000/admin?type=customer", {
@@ -56,7 +61,7 @@ function Customers() {
   async function handleSaveCustomer(updated) {
     try {
       const response = await fetch("http://localhost:5000/admin", {
-        method: "PATCH",
+        method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           type: "editcustomer",
@@ -73,7 +78,7 @@ function Customers() {
         setCustomerList(prev =>
           prev.map(c => c.customerID === updated.customerID ? updated : c)
         );
-        alert("Customer Updated");
+        showToast("Customer updated successfully");
       } else {
         alert("Failed updating" + " : " + data.message);
       }
@@ -87,6 +92,7 @@ function Customers() {
   }
 
   async function handleDeleteCustomer(deleteid) {
+    if (!window.confirm("Delete this customer?")) return;
     try{
       const response = await fetch("http://localhost:5000/admin", {
         method: "DELETE",
@@ -100,7 +106,6 @@ function Customers() {
       console.log("deleted:", data);
       if(data.message === "Customer deleted successfully"){
         setCustomerList(prev => prev.filter(c => c.customerID !== deleteid));
-        alert("Customer deleted successfully")
       }
       else{
         alert("Failed", + data.message);
@@ -113,8 +118,12 @@ function Customers() {
 
   return (
     <div className="min-h-screen p-6 bg-slate-50 flex justify-center items-start">
+      <Toast message={toastMessage} onClose={() => setToastMessage("")} position="top-center" />
       <div className="w-[1000px]">
-        <h2 className="text-2xl font-bold mb-4">All Customers</h2>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-2xl font-bold">All Customers</h2>
+          <BackButton />
+        </div>
         <SearchBar
           value={search}
           onChange={setSearch}
@@ -148,7 +157,7 @@ function Customers() {
                         View
                       </button>
                       <EditButton onClick={() => handleEditCustomer(customer)} />
-                      <DeleteButton onClick={() => handleDeleteCustomer(customer.customerID)} />
+                      <ConfirmDeleteButton onConfirm={() => handleDeleteCustomer(customer.customerID)} />
                     </div>
                   </td>
                 </tr>

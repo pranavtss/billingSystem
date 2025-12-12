@@ -1,5 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
+import FormInput from "../components/FormInput";
+import ContainerCard from "../components/ContainerCard";
 
 export default function CreateUserContainer({
   newUser,
@@ -8,24 +10,23 @@ export default function CreateUserContainer({
 }) {
   const navigate = useNavigate();
   return (
-  <div className="bg-white rounded-xl shadow-2xl border-2 border-blue-300 p-6 w-full max-w-md mx-auto flex flex-col gap-2">
-      <h3 className="font-bold mb-3 text-lg text-center">Create User</h3>
-      <input
+    <ContainerCard title="Create User">
+      <FormInput
+        type="number"
         placeholder="ID"
-        className="w-full border p-2 rounded mb-2"
         value={newUser.id}
         onChange={(e) => setNewUser({ ...newUser, id: e.target.value })}
+        min="0"
+        step="1"
       />
-      <input
+      <FormInput
         placeholder="Name"
-        className="w-full border p-2 rounded mb-2"
         value={newUser.name}
         onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
       />
-      <input
-        placeholder="Password"
+      <FormInput
         type="password"
-        className="w-full border p-2 rounded mb-2"
+        placeholder="Password"
         value={newUser.password}
         onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
       />
@@ -41,6 +42,6 @@ export default function CreateUserContainer({
       >
         View All Users
       </button>
-    </div>
+    </ContainerCard>
   );
 }

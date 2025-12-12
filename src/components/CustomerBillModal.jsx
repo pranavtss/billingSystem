@@ -1,9 +1,14 @@
 import React, { useState, useMemo } from "react";
-import { EditButton, DeleteButton } from "./ActionButton";
+import { EditButton } from "./ActionButton";
+import ConfirmDeleteButton from "./ConfirmDeleteButton";
 import EditBillItemModal from "./EditBillItemModal";
+import Toast from "./Toast";
 
 export default function CustomerBillModal({ open, onClose, pending, purchases = [], customerID, fishes = [], total = 0, onRefresh }) {
     const [editItem, setEditItem] = useState(null);
+    const [toastMessage, setToastMessage] = useState("");
+
+    const showToast = (msg) => setToastMessage(msg);
 
     async function handleDeletePurchase(itemId){
         try{
@@ -17,7 +22,7 @@ export default function CustomerBillModal({ open, onClose, pending, purchases = 
             });
             const data = await res.json();
             if(data.ok){
-                alert("Purchase item deleted successfully");
+                showToast("Item deleted successfully");
                 // ask parent to refresh purchases list
                 if (typeof onRefresh === 'function') onRefresh();
             }
@@ -34,7 +39,7 @@ export default function CustomerBillModal({ open, onClose, pending, purchases = 
     async function handleUpdatePurchase(_id , newPrice){
         try{
             const res = await fetch("http://localhost:5000/admin", {
-                method: "PATCH",
+                method: "POST",
                 headers:{"Content-Type" : "application/json"},
                 body:JSON.stringify({
                     type:"editBill",
@@ -44,7 +49,7 @@ export default function CustomerBillModal({ open, onClose, pending, purchases = 
             });
             const data = await res.json();
             if(data.ok){
-                alert("Purchase item updated successfully");
+                showToast("Price updated successfully");
                 if (typeof onRefresh === 'function') onRefresh();
             }
             else{
@@ -89,8 +94,20 @@ export default function CustomerBillModal({ open, onClose, pending, purchases = 
     if (!open) return null;
     return (
         <div className="fixed inset-0 bg-transparent flex items-center justify-center z-50">
-            <div className="bg-white rounded-xl shadow-2xl border-2 border-blue-300 p-6 w-full max-w-lg max-h-[80vh] overflow-y-auto">
-                <h3 className="font-bold mb-4 text-lg">Current Bill for Customer</h3>
+            <Toast message={toastMessage} onClose={() => setToastMessage("")} position="top-center" />
+            <div className="bg-white rounded-xl shadow-2xl border-2 border-blue-300 p-6 w-full max-w-lg max-h-[80vh] overflow-y-auto relative">
+                {/* Cross button */}
+                <button
+                    onClick={onClose}
+                    className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 transition-colors"
+                    aria-label="Close"
+                >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+                
+                <h3 className="font-bold mb-4 text-lg pr-8">Current Bill for Customer</h3>
                 <div className="space-y-2">
                     {itemsToRender.length > 0 ? itemsToRender.map((it) => {
                         const unit = it.unit || 'kg';
@@ -105,7 +122,7 @@ export default function CustomerBillModal({ open, onClose, pending, purchases = 
                                 <div className="flex items-center gap-2">
                                     <div className="text-sm font-semibold">₹ {it.price}/{unitLabel} - ₹ {itemTotal}</div>
                                     <EditButton onClick={() => setEditItem({ ...it, fishName: it.fishName })} />
-                                    <DeleteButton onClick={() => handleDeletePurchase(it.id)} />
+                                    <ConfirmDeleteButton onConfirm={() => handleDeletePurchase(it.id)} />
                                 </div>
                             </div>
                         );

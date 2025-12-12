@@ -2,15 +2,18 @@ import React, { useState } from "react";
 import Logout from "../components/Logout";
 //import { useNavigate } from "react-router-dom";
 import SearchBarForUpdate from "../components/SearchBarForUpdate";
+import Toast from "../components/Toast";
 
 export default function User({ data }) {
 
   const [userId] = useState(localStorage.getItem("currentUser") || "user");
   const [fishIdentifier, setFishIdentifier] = useState("");
   const [customerId, setCustomerId] = useState("");
-  const [qty, setQty] = useState("");
-  const [unit, setUnit] = useState('kg');
+  const [qtyKg, setQtyKg] = useState("");
+  const [qtyBox, setQtyBox] = useState("");
   const [customerList, setCustomerList] = useState([]);
+  const [toastMessage, setToastMessage] = useState("");
+  const showToast = (msg) => setToastMessage(msg);
   
   React.useEffect(() => {
     async function fetchCustomers() {
@@ -48,8 +51,14 @@ export default function User({ data }) {
       // client-side validation to avoid server 400s
       if (!customerId) return alert("Please select a customer");
       if (!fishIdentifier) return alert("Please select a fish");
-      if (!qty || Number(qty) <= 0) return alert("Enter a valid quantity");
-      if (!unit) return alert("Unit is required");
+      const qtyKgNum = Number(qtyKg) || 0;
+      const qtyBoxNum = Number(qtyBox) || 0;
+      const filled = [qtyKgNum > 0, qtyBoxNum > 0].filter(Boolean).length;
+      if (filled === 0) return alert("Enter quantity in kg or box");
+      if (filled > 1) return alert("Use only one field at a time (kg or box)");
+
+      const unit = qtyBoxNum > 0 ? "box" : "kg";
+      const quantity = unit === "box" ? qtyBoxNum : qtyKgNum;
 
       const res = await fetch("http://localhost:5000/user", {
         method: "POST",
@@ -61,16 +70,17 @@ export default function User({ data }) {
           userID: (submitUserId),
           customerID: customerId,
           fishID: fishIdentifier,
-          quantity: Number(qty),
-          unit: unit
+          quantity,
+          unit
         })
       });
       const result = await res.json();
       if(result && result.message === "Purchase recorded successfully") {
-        alert("Added to pending successfully");
-        setQty("");
+        showToast("Added to pending successfully");
+        setQtyKg("");
+        setQtyBox("");
         setFishIdentifier("");
-        setCustomerId("");
+        // Keep customerId selected - don't clear it
       } else {
         alert(result.message || "Failed to add to pending");
       }
@@ -82,15 +92,16 @@ export default function User({ data }) {
 
 
   return (
-    <div className="min-h-screen p-6 bg-slate-50">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-bold text-gray-800">
+    <div className="min-h-screen p-3 sm:p-4 md:p-6 bg-slate-50">
+      <Toast message={toastMessage} onClose={() => setToastMessage("")} position="top-center" />
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3">
+        <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800">
           User Dashboard — {data?.users?.find(u => String(u.userID) === String(userId))?.username || userId}
         </h2>
         <Logout />
       </div>
-      <div className="flex flex-col md:flex-row gap-6 justify-center">
-        <div className="max-w-md w-full bg-white p-4 rounded-xl shadow flex flex-col gap-4">
+      <div className="flex flex-col lg:flex-row gap-4 sm:gap-6 justify-center">
+        <div className="w-full lg:max-w-md bg-white p-3 sm:p-4 rounded-xl shadow flex flex-col gap-3 sm:gap-4">
           <h3 className="font-semibold mb-2">Add Purchase (pending)</h3>
           <SearchBarForUpdate
             options={customerList.map((c) => ({
@@ -110,14 +121,25 @@ export default function User({ data }) {
             onChange={setFishIdentifier}
             placeholder="Search fish by ID or name..."
           />
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-2">
             <input
-              placeholder={`Quantity`}
-              className="flex-1 border p-2 mb-2 rounded"
-              value={qty}
-              onChange={(e) => setQty(e.target.value)}
+              type="number"
+              placeholder={`Qty (kg)`}
+              className="flex-1 border p-2 rounded text-sm sm:text-base"
+              value={qtyKg}
+              onChange={(e) => setQtyKg(e.target.value)}
+              min="0"
+              step="0.01"
             />
-            <input className="w-28 border p-2 mb-2 rounded" value={unit} onChange={e => setUnit(e.target.value)} />
+            <input
+              type="number"
+              placeholder={`Qty (box)`}
+              className="flex-1 border p-2 rounded text-sm sm:text-base"
+              value={qtyBox}
+              onChange={(e) => setQtyBox(e.target.value)}
+              min="0"
+              step="1"
+            />
           </div>
           <button
             className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700"
@@ -126,9 +148,10 @@ export default function User({ data }) {
             Add to Pending
           </button>
         </div>
-        <div className="max-w-md w-full mt-6 md:mt-0 bg-white p-4 rounded-xl shadow">
-          <h4 className="font-semibold mb-2">Available Fishes</h4>
-          <table className="w-full text-sm border rounded">
+        <div className="w-full lg:max-w-md bg-white p-3 sm:p-4 rounded-xl shadow">
+          <h4 className="font-semibold mb-2 text-base sm:text-lg">Available Fishes</h4>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs sm:text-sm border rounded">
             <thead>
               <tr className="bg-slate-100">
                 <th className="py-1 px-2 text-left border-r">Fish ID</th>
@@ -151,6 +174,7 @@ export default function User({ data }) {
                 ))}
             </tbody>
           </table>
+          </div>
         </div>
       </div>
     </div>
