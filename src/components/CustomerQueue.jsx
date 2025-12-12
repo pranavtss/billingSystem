@@ -1,10 +1,12 @@
 import { useState, useEffect } from "react";
 import CustomerBillModal from "./CustomerBillModal";
+import Toast from "./Toast";
 
-export default function CustomerQueue({ data, setData, pending, pendingTotal, fishes }) {
+export default function CustomerQueue({ data, setData, pending, pendingTotal, fishes, customers }) {
   const [viewCustomerId, setViewCustomerId] = useState(null);
   const [customerList, setCustomerList] = useState([]);
   const [purchasesList, setPurchasesList] = useState([]);
+  const [toast, setToast] = useState({ message: "", type: "success" });
 
   useEffect(() => {
     async function fetchCustomers() {
@@ -37,7 +39,7 @@ export default function CustomerQueue({ data, setData, pending, pendingTotal, fi
         }
       } catch (err) {
         console.error("Error fetching customers:", err);
-        alert("Error fetching customers");
+        setToast({ message: "Error fetching customers", type: "error" });
       }
     }
     fetchCustomers();
@@ -71,7 +73,6 @@ export default function CustomerQueue({ data, setData, pending, pendingTotal, fi
     }
   }
 
-  // SUBMIT PURCHASE (MOVE TO HISTORY)
   async function handleSubmitPurchase(customerID) {
     try {
       const itemsFromDB = purchasesList.filter(p => String(p.customerID) === String(customerID));
@@ -80,7 +81,7 @@ export default function CustomerQueue({ data, setData, pending, pendingTotal, fi
       const pendingItems = pendingBill?.items ?? [];
 
       if (itemsFromDB.length === 0 && pendingItems.length === 0) {
-        alert("No purchases or pending items found for this customer");
+        setToast({ message: "No purchases or pending items found for this customer", type: "error" });
         return;
       }
 
@@ -90,6 +91,7 @@ export default function CustomerQueue({ data, setData, pending, pendingTotal, fi
         body: JSON.stringify({
           type: "submittohistory",
           customerID,
+          userID: localStorage.getItem("currentUser") || undefined,
           items: pendingItems.map(it => {
             const fish = fishes.find(f => String(f.fishID) === String(it.fishID || it.fishId));
 
@@ -115,7 +117,7 @@ export default function CustomerQueue({ data, setData, pending, pendingTotal, fi
       const result = await res.json();
 
       if (!result.ok) {
-        alert(result.message || "Failed to submit purchase");
+        setToast({ message: result.message || "Failed to submit purchase", type: "error" });
         return;
       }
 
@@ -127,23 +129,29 @@ export default function CustomerQueue({ data, setData, pending, pendingTotal, fi
         });
       }
 
-      alert("Purchase submitted and moved to history!");
+      setToast({ message: "Purchase submitted!", type: "success" });
 
       await refreshPurchases();
     } catch (err) {
       console.error(err);
-      alert("Error submitting purchase");
+      setToast({ message: "Error submitting purchase", type: "error" });
     }
   }
+
+  const displayCustomers = customers && customers.length > 0 
+    ? customerList.filter(c => customers.some(fc => String(fc.customerID) === String(c.customerID)))
+    : customerList;
 
   return (
     <div className="w-full">
       <div className="w-full flex flex-col items-center">
         <div className="grid grid-cols-1 gap-4 w-full">
-          {customerList.length === 0 ? (
-            <div className="text-gray-500 text-center">No active customers</div>
+          {displayCustomers.length === 0 ? (
+            <div className="text-gray-500 text-center py-4">
+              {customerList.length === 0 ? "No active customers" : "No result found"}
+            </div>
           ) : (
-            customerList.map(customer => {
+            displayCustomers.map(customer => {
               const purchasesForCustomer = purchasesList.filter(
                 p => String(p.customerID) === String(customer.customerID)
               );
@@ -271,6 +279,13 @@ export default function CustomerQueue({ data, setData, pending, pendingTotal, fi
 
           setData(prev => ({ ...prev, pending: newPending }));
         }}
+      />
+      
+      <Toast 
+        message={toast.message} 
+        type={toast.type} 
+        onClose={() => setToast({ message: "", type: "success" })}
+        position="top-center"
       />
     </div>
   );

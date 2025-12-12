@@ -2,10 +2,14 @@ import React, { useState,useEffect } from "react";
 import SearchBar from "../components/SearchBar";
 import ConfirmDeleteButton from "../components/ConfirmDeleteButton";
 import BackButton from "../components/BackButton";
+import DataTable from "../components/DataTable";
+import Toast from "../components/Toast";
 
 export default function ViewUsers() {
     const [search, setSearch] = useState("");
     const [userList, setUserList] = useState([]);
+    const [toastMessage, setToastMessage] = useState("");
+    const showToast = (msg) => setToastMessage(msg);
 
     useEffect(() =>{
         fetch("http://localhost:5000/admin?type=user",{
@@ -41,7 +45,6 @@ export default function ViewUsers() {
     );
 
     async function handleDeleteUser(id) {
-        if (!window.confirm("Delete this user?")) return;
         try{
             const res = await fetch("http://localhost:5000/admin", {
                 method:"DELETE",
@@ -54,6 +57,7 @@ export default function ViewUsers() {
             const data = await res.json();
             if(data.message === "User deleted successfully"){
                 setUserList(prev => prev.filter(u => u.userID !== id));
+                showToast("User deleted successfully");
             }
             else{
                 alert("Failed to delete user: " + data.message);
@@ -65,42 +69,40 @@ export default function ViewUsers() {
         }
     }
 
+    const columns = [
+        { label: "User ID", key: "userID" },
+        { label: "Name", key: "username" },
+        {
+            label: "Actions",
+            width: "150px",
+            render: (user) => (
+                <div className="flex items-center">
+                    <ConfirmDeleteButton
+                        onConfirm={() => handleDeleteUser(user.userID)}
+                    />
+                </div>
+            )
+        }
+    ];
+
     return (
-        <div className="min-h-screen p-6 bg-slate-50 flex justify-center items-start">
-            <div className="w-[1000px]">
-                <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-2xl font-bold">All Users</h2>
+        <div className="min-h-screen bg-slate-50 p-4 sm:p-6 flex justify-center items-start">
+            <Toast message={toastMessage} onClose={() => setToastMessage("")} position="top-center" />
+            <div className="w-full max-w-5xl space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <h2 className="text-xl sm:text-2xl font-bold">All Users</h2>
                     <BackButton />
                 </div>
                 <SearchBar
                     value={search}
-                    onChange={(e) => setSearch(e.target.value)}
+                    onChange={setSearch}
                     placeholder="Search by name or ID..."
-                    className="mb-4"
                 />
-                <table className="min-w-full bg-white border rounded">
-                    <thead>
-                        <tr className="bg-slate-100">
-                            <th className="py-2 px-4 border-b border-r text-left">User ID</th>
-                            <th className="py-2 px-4 border-b border-r text-left">Name</th>
-                            <th className="py-2 px-4 border-b text-left">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {filteredUsers.map((user) => (
-                            <tr key={user.userID}>
-                                <td className="py-2 px-4 border-b border-r">{user.userID}</td>
-                                <td className="py-2 px-4 border-b border-r">{user.username}</td>
-                                <td className="py-2 px-4 border-b">
-                                    <ConfirmDeleteButton
-                                        onConfirm={() => handleDeleteUser(user.userID)}
-                                        className="mx-1"
-                                    />
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
+                <DataTable
+                    columns={columns}
+                    rows={filteredUsers}
+                    emptyMessage="No users found"
+                />
             </div>
         </div>
     );

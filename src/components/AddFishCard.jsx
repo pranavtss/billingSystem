@@ -9,7 +9,6 @@ export default function AddFishCard() {
   });
   async function handleAdd() {
     try {
-      // basic client-side validation
       if (!fish.fishID || !fish.fishName) {
         return alert("Provide Fish ID and Name");
       }
@@ -40,7 +39,6 @@ export default function AddFishCard() {
         return;
       }
       alert(result.msg || "Fish added successfully!");
-      // reset form
       setFish({ fishID: "", fishName: "", kgPrice: "", boxPrice: "" });
     } catch (err) {
       console.error(err);

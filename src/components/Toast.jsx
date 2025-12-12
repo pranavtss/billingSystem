@@ -20,7 +20,6 @@ export default function Toast({ message, type = "success", duration = 4000, onCl
   } else if (position === "top-center") {
     wrapperStyle = { position: "fixed", top: 16, left: "50%", transform: "translateX(-50%)", zIndex: 9999 };
   } else {
-    // default to top-right
     wrapperStyle = { position: "fixed", top: 16, right: 16, zIndex: 9999 };
   }
 

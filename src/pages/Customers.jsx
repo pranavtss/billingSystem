@@ -6,6 +6,7 @@ import ConfirmDeleteButton from '../components/ConfirmDeleteButton';
 import SearchBar from '../components/SearchBar';
 import BackButton from '../components/BackButton';
 import Toast from '../components/Toast';
+import DataTable from '../components/DataTable';
 
 function Customers() {
   const navigate = useNavigate();
@@ -92,7 +93,6 @@ function Customers() {
   }
 
   async function handleDeleteCustomer(deleteid) {
-    if (!window.confirm("Delete this customer?")) return;
     try{
       const response = await fetch("http://localhost:5000/admin", {
         method: "DELETE",
@@ -116,12 +116,34 @@ function Customers() {
     }
   }
 
+  const columns = [
+    { label: "Customer ID", key: "customerID" },
+    { label: "Name", key: "customername" },
+    { label: "Phone", key: "customerphone" },
+    {
+      label: "Actions",
+      width: "200px",
+      render: (customer) => (
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            className="bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600 transition text-sm"
+            onClick={() => navigate(`/history?customerId=${customer.customerID}`)}
+          >
+            View
+          </button>
+          <EditButton onClick={() => handleEditCustomer(customer)} />
+          <ConfirmDeleteButton onConfirm={() => handleDeleteCustomer(customer.customerID)} />
+        </div>
+      )
+    }
+  ];
+
   return (
-    <div className="min-h-screen p-6 bg-slate-50 flex justify-center items-start">
+    <div className="min-h-screen bg-slate-50 p-4 sm:p-6 flex justify-center items-start">
       <Toast message={toastMessage} onClose={() => setToastMessage("")} position="top-center" />
-      <div className="w-[1000px]">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-bold">All Customers</h2>
+      <div className="w-full max-w-5xl space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <h2 className="text-xl sm:text-2xl font-bold">All Customers</h2>
           <BackButton />
         </div>
         <SearchBar
@@ -130,41 +152,11 @@ function Customers() {
           placeholder="Search by name, phone, or ID"
         />
 
-        <table className="min-w-full bg-white border rounded">
-          <thead>
-            <tr className="bg-slate-100">
-              <th className="py-2 px-4 border-b border-r text-left">Customer ID</th>
-              <th className="py-2 px-4 border-b border-r text-left">Name</th>
-              <th className="py-2 px-4 border-b text-left">Phone</th>
-              <th className="py-2 px-4 border-b text-left">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredCustomers.length === 0 ? (
-              <tr><td colSpan="4" className="text-center py-4">No customers found</td></tr>
-            ) : (
-              filteredCustomers.map((customer) => (
-                <tr key={customer._id}>
-                  <td className="py-2 px-4 border-b border-r">{customer.customerID}</td>
-                  <td className="py-2 px-4 border-b border-r">{customer.customername}</td>
-                  <td className="py-2 px-4 border-b">{customer.customerphone}</td>
-                  <td className="py-2 px-4 border-b">
-                    <div className="flex items-center gap-2">
-                      <button
-                        className="bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600 transition"
-                        onClick={() => navigate(`/history?customerId=${customer.customerID}`)}
-                      >
-                        View
-                      </button>
-                      <EditButton onClick={() => handleEditCustomer(customer)} />
-                      <ConfirmDeleteButton onConfirm={() => handleDeleteCustomer(customer.customerID)} />
-                    </div>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+        <DataTable
+          columns={columns}
+          rows={filteredCustomers}
+          emptyMessage="No customers found"
+        />
       </div>
 
       <EditCustomerModal

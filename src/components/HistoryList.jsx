@@ -13,8 +13,12 @@ export default function HistoryList({ history }) {
                 {h.customername}
                 <span className="text-xs text-gray-500">({h.customerID})</span>
                 </div>
-              <div className="text-xs text-gray-500">
-                {new Date(h.date).toLocaleString()}
+              <div className="text-xs text-gray-500 space-x-2">
+                <span>{new Date(h.date).toLocaleString()}</span>
+                {h?.customerphone ? <span>• {h.customerphone}</span> : null}
+                {h?.billedBy?.username || h?.billedBy?.userID ? (
+                  <span>• Billed by: {h.billedBy.username || h.billedBy.userID}</span>
+                ) : null}
               </div>
             </div>
             <div className="text-sm font-semibold">
@@ -27,13 +31,12 @@ export default function HistoryList({ history }) {
                 <li key={idx} className="flex justify-between border-t py-1">
                   <div>
                     {it.fishName || it.fishId || it.fishID} x {it.qty ?? it.quantity} {it.unit ?? 'kg'}
-                    <span className="text-xs text-gray-500"> (by {(it.userId ?? it.userID ?? h.userID) || 'unknown'})</span>
+                    <span className="text-xs text-gray-500"> (added by {(it.addedBy?.username || it.userName || it.userID || 'unknown')})</span>
                   </div>
                   <div>₹ {(Number(it.price || it.kgprice || it.boxprice || 0) * Number(it.qty || it.quantity || 0)).toFixed(2)}</div>
                 </li>
               ))
             ) : (
-              // server-side history documents are stored per-item (no items array)
               <li className="flex justify-between border-t py-1">
                 <div>
                   {h.fishID} x {h.quantity} {h.unit || 'kg'}

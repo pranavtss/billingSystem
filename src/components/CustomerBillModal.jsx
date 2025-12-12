@@ -23,7 +23,6 @@ export default function CustomerBillModal({ open, onClose, pending, purchases = 
             const data = await res.json();
             if(data.ok){
                 showToast("Item deleted successfully");
-                // ask parent to refresh purchases list
                 if (typeof onRefresh === 'function') onRefresh();
             }
             else{
@@ -61,15 +60,12 @@ export default function CustomerBillModal({ open, onClose, pending, purchases = 
         }
     }
 
-    // build items from server purchases for this customer when provided
     const serverItems = useMemo(() => {
         if (!purchases || !customerID) return [];
         return purchases
             .filter(p => String(p.customerID) === String(customerID))
             .map(p => {
                 const fish = fishes.find(f => String(f.fishID) === String(p.fishID) || String(f.id) === String(p.fishID)) || { fishName: p.fishID };
-                // Prefer the recorded price on the purchase (p.kgPrice / p.boxPrice) if available,
-                // otherwise fall back to the current fish prices.
                 const recordedKg = Number(p.kgPrice) || 0;
                 const recordedBox = Number(p.boxPrice) || 0;
                 const fallbackKg = Number(fish.kgPrice) || 0;

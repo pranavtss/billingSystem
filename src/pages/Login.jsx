@@ -6,7 +6,6 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
   
-  // Clear any stale auth data when login page loads
   useEffect(() => {
     localStorage.removeItem("token");
     localStorage.removeItem("currentUser");
@@ -27,14 +26,16 @@ export default function Login() {
       });
       const data = await res.json();
       if(data.message === "Login successful" && data.role === "admin"){
-        // persist session info
+      
         if (data.token) localStorage.setItem("token", data.token);
         localStorage.setItem("currentUser", id);
+        localStorage.setItem("role", data.role);
         navigate("/admin", { replace: true });
       }
       else if (data.message === "Login successful" && data.role === "user"){
         if (data.token) localStorage.setItem("token", data.token);
         localStorage.setItem("currentUser", id);
+        localStorage.setItem("role", data.role);
         navigate("/user", { replace: true });
       }
       else{

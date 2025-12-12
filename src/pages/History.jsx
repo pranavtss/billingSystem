@@ -24,16 +24,25 @@ export default function History({ history, users }) {
   }, [history, search, customerId]);
 
   return (
-    <div className="min-h-screen p-6 bg-slate-50">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-bold">History</h2>
-        <div>
-          <button onClick={()=>navigate("/admin")} className="px-3 py-1 bg-slate-200 rounded">Back to Admin</button>
+    <div className="min-h-screen bg-slate-50 p-4 sm:p-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+        <h2 className="text-xl sm:text-2xl font-bold">History</h2>
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={()=>navigate("/admin")}
+            className="px-3 py-2 text-sm sm:text-base bg-slate-200 rounded hover:bg-slate-300 transition"
+          >
+            Back to Admin
+          </button>
         </div>
       </div>
 
-  <SearchBar value={search} onChange={setSearch} placeholder="Search by customer name or id..." />
-  <HistoryList history={filtered} users={users} />
+      <div className="space-y-3">
+        <SearchBar value={search} onChange={setSearch} placeholder="Search by customer name or id..." />
+        <div className="bg-white rounded-xl shadow p-3 sm:p-4">
+          <HistoryList history={filtered} users={users} />
+        </div>
+      </div>
     </div>
   );
 }

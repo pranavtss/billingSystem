@@ -28,20 +28,17 @@ export default function Admin({
   const [fishIdentifier, setFishIdentifier] = useState("");
   const [priceInput, setPriceInput] = useState("");
   const [boxPriceInput, setBoxPriceInput] = useState("");
-  // keep shape consistent with AddFishContainer and backend fields
   const [newFish, setNewFish] = useState({ fishID: "", fishName: "", kgPrice: "", boxPrice: "" });
   const [fishesList, setFishesList] = useState([]);
   const [toastMessage, setToastMessage] = useState("");
   const showToast = (msg) => setToastMessage(msg);
 
-  // ------------ HANDLERS ------------
   React.useEffect(() =>{
     async function fetchFishes(){
       try{
         const res = await fetch("http://localhost:5000/admin?type=fish");
         const data = await res.json();
         if(data.ok){
-          // Sort fish list by fishID in ascending order
           const sortedFishes = data.data.sort((a, b) => {
             const idA = String(a.fishID).toLowerCase();
             const idB = String(b.fishID).toLowerCase();
@@ -105,7 +102,6 @@ export default function Admin({
   async function handleAddFish() {
     try{
       console.log("newFish state:", JSON.stringify(newFish));
-      // basic validation
       if (!newFish.fishID || !newFish.fishName || String(newFish.fishID).trim() === "" || String(newFish.fishName).trim() === "") {
         return alert("Provide a valid Fish ID and Name");
       }
@@ -134,7 +130,6 @@ export default function Admin({
       const data = await res.json();
       if(!res.ok) return alert(data.msg || data.message || "Failed to add fish");
       
-      // Add new fish to local list and sort
       if (data.fish) {
         const updatedList = [...fishesList, data.fish].sort((a, b) => {
           const idA = String(a.fishID).toLowerCase();
@@ -154,13 +149,11 @@ export default function Admin({
 
   async function handleEditFishPrice(identifier, newKgPrice, newBoxPrice) {
     try {
-      // allow selection by id or name
       const trimmed = (identifier || "").trim();
       if (!trimmed) {
         return alert("Select a fish by ID or name");
       }
 
-      // resolve fish by ID first, then name match
       const foundById = fishesList.find((f) => String(f.fishID) === trimmed);
       const foundByName = fishesList.find((f) => String(f.fishName).toLowerCase() === trimmed.toLowerCase());
       const targetFish = foundById || foundByName;
@@ -200,7 +193,6 @@ export default function Admin({
         return alert(data.message || data.msg || "Failed to update fish");
       }
 
-      // refresh list locally
       if (data.data) {
         setFishesList((prev) => prev.map((f) => (String(f.fishID) === String(data.data.fishID) ? data.data : f)));
       }
@@ -230,7 +222,6 @@ export default function Admin({
     });
   })();
 
-  // ------------ UI ------------
   return (
     <div className="min-h-screen p-4 sm:p-6 bg-slate-50">
       <Toast message={toastMessage} onClose={() => setToastMessage("")} position="top-center" />

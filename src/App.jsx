@@ -7,54 +7,56 @@ import User from "./pages/User";
 import History from "./pages/History";
 import Customers from "./pages/Customers";
 
-// Protected Route wrapper - redirects to login if not authenticated
-function ProtectedRoute({ children }) {
-  const [isAuthenticated, setIsAuthenticated] = React.useState(false);
+const getAuthInfo = () => ({
+  token: localStorage.getItem("token"),
+  currentUser: localStorage.getItem("currentUser"),
+  role: localStorage.getItem("role"),
+});
+
+
+function ProtectedRoute({ children, allowedRoles }) {
+  const [auth, setAuth] = React.useState(getAuthInfo());
   const [isChecking, setIsChecking] = React.useState(true);
-  
+
   React.useEffect(() => {
-    const token = localStorage.getItem("token");
-    const currentUser = localStorage.getItem("currentUser");
-    
-    // Check authentication on mount and whenever storage changes
-    if (token && currentUser) {
-      setIsAuthenticated(true);
-    } else {
-      setIsAuthenticated(false);
-    }
+    setAuth(getAuthInfo());
     setIsChecking(false);
-    
-    // Listen for storage changes (logout in another tab)
+
     const handleStorageChange = (e) => {
-      if (e.key === "token" || e.key === "currentUser") {
-        const newToken = localStorage.getItem("token");
-        const newUser = localStorage.getItem("currentUser");
-        setIsAuthenticated(!!(newToken && newUser));
+      if (e.key === "token" || e.key === "currentUser" || e.key === "role") {
+        setAuth(getAuthInfo());
       }
     };
-    
+
     window.addEventListener("storage", handleStorageChange);
     return () => window.removeEventListener("storage", handleStorageChange);
   }, []);
-  
-  if (isChecking) {
-    return null; // or a loading spinner
-  }
-  
-  if (!isAuthenticated) {
+
+  if (isChecking) return null;
+
+  if (!auth.token || !auth.currentUser) {
     return <Navigate to="/" replace />;
   }
-  
+
+  if (allowedRoles && allowedRoles.length > 0 && !allowedRoles.includes(auth.role)) {
+    return <Navigate to="/" replace />;
+  }
+
   return children;
 }
 
+function AuthLanding() {
+  const auth = getAuthInfo();
+  if (auth.token && auth.currentUser) {
+    const target = auth.role === "admin" ? "/admin" : "/user";
+    return <Navigate to={target} replace />;
+  }
+  return <Login />;
+}
+
 export default function App() {
-  // App keeps minimal local-only state (pending bills and history).
-  // Users, customers and fishes are fetched from backend and CRUD operations
-  // are performed against the server (server is the source of truth).
   const [data, setData] = useState({ users: [], customers: [], fishes: [], pending: {}, history: [] });
 
-  // Fetch core lists from backend on mount
   useEffect(() => {
     async function fetchAll() {
       try {
@@ -79,10 +81,7 @@ export default function App() {
     fetchAll();
   }, []);
 
-  // --- Data operations (passed to pages) ---
-  // Add user (admin-only)
-  // CRUD for users/customers/fishes now performed by backend. The App exposes
-  // thin wrappers that call the server and refresh local list state.
+
   async function refreshLists() {
     try {
       const [usersRes, customersRes, fishesRes] = await Promise.all([
@@ -276,7 +275,6 @@ export default function App() {
 
 
 
-  // User adds a purchase -> goes into pending[customerId] (multiple items allowed)
   async function addPurchase({ userId, customerId, fishId, qty, unit = 'kg' }) {
     try{
       const res = await fetch("http://localhost:5000/user", {
@@ -303,7 +301,6 @@ export default function App() {
     }
   }
 
-  // Admin submits a pending bill -> moves to history and clears pending
   function submitPendingBill(customerId) {
     const pending = { ...data.pending };
     if (!pending[customerId] || !pending[customerId].items.length) return { ok:false, msg:"No pending items" };
@@ -346,7 +343,6 @@ export default function App() {
     fetchHistory();
   },[]);
 
-  // Get totals helper for UI
   function pendingTotal(customerId) {
     const p = data.pending[customerId];
     if (!p) return 0;
@@ -356,9 +352,10 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Login users={data.users} />} />
+        <Route path="/" element={<AuthLanding />} />
+        <Route path="/login" element={<AuthLanding />} />
         <Route path="/admin" element={
-          <ProtectedRoute>
+          <ProtectedRoute allowedRoles={["admin"]}>
             <Admin
               data={data}
               setData={setData}
@@ -375,22 +372,22 @@ export default function App() {
           </ProtectedRoute>
         } />
         <Route path="/user" element={
-          <ProtectedRoute>
+          <ProtectedRoute allowedRoles={["user", "admin"]}>
             <User data={data} addPurchase={addPurchase} />
           </ProtectedRoute>
         } />
         <Route path="/users" element={
-          <ProtectedRoute>
+          <ProtectedRoute allowedRoles={["admin"]}>
             <ViewUsers users={data.users} deleteUser={deleteUser} />
           </ProtectedRoute>
         } />
         <Route path="/history" element={
-          <ProtectedRoute>
+          <ProtectedRoute allowedRoles={["admin"]}>
             <History history={history} users={data.users} />
           </ProtectedRoute>
         } />
         <Route path="/customers" element={
-          <ProtectedRoute>
+          <ProtectedRoute allowedRoles={["admin"]}>
             <Customers data={{
               ...data,
               deleteCustomer,
@@ -398,6 +395,7 @@ export default function App() {
             }} />
           </ProtectedRoute>
         } />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
   );

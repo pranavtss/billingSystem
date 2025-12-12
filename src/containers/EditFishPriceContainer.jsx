@@ -13,7 +13,6 @@ export default function EditFishPriceContainer({
   fishesList,
   setFishesList
 }) {
-  // 🐟 Delete Fish Handler
   async function handleDelete(fishID) {
     try {
       const res = await fetch("http://localhost:5000/admin", {

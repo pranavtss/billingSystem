@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import Logout from "../components/Logout";
-//import { useNavigate } from "react-router-dom";
 import SearchBarForUpdate from "../components/SearchBarForUpdate";
 import Toast from "../components/Toast";
 
@@ -41,14 +40,12 @@ export default function User({ data }) {
 
   async function handleAdd() {
     try{
-      // Prefer the numeric `userID` from the users list; do NOT send `username`.
       const foundUser = data?.users?.find(
         (u) => String(u.userID) === String(userId) || String(u.username) === String(userId) || String(u.id) === String(userId) || String(u.name) === String(userId)
       );
       const submitUserId = foundUser ? (foundUser.userID ?? foundUser.id) : userId;
       console.log("Submitting purchase for user ID:", submitUserId);
 
-      // client-side validation to avoid server 400s
       if (!customerId) return alert("Please select a customer");
       if (!fishIdentifier) return alert("Please select a fish");
       const qtyKgNum = Number(qtyKg) || 0;
@@ -80,7 +77,6 @@ export default function User({ data }) {
         setQtyKg("");
         setQtyBox("");
         setFishIdentifier("");
-        // Keep customerId selected - don't clear it
       } else {
         alert(result.message || "Failed to add to pending");
       }
@@ -95,7 +91,7 @@ export default function User({ data }) {
     <div className="min-h-screen p-3 sm:p-4 md:p-6 bg-slate-50">
       <Toast message={toastMessage} onClose={() => setToastMessage("")} position="top-center" />
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3">
-        <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800">
+        <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800 leading-snug">
           User Dashboard — {data?.users?.find(u => String(u.userID) === String(userId))?.username || userId}
         </h2>
         <Logout />
@@ -142,7 +138,7 @@ export default function User({ data }) {
             />
           </div>
           <button
-            className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700"
+            className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700 text-sm sm:text-base"
             onClick={handleAdd}
           >
             Add to Pending
