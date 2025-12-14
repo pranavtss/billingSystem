@@ -272,7 +272,6 @@ export default function Admin({
             />
           </div>
 
-          {/* User & Customer management */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
             <CreateUserContainer
               newUser={newUser}

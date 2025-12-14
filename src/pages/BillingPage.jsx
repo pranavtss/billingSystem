@@ -345,7 +345,6 @@ export default function BillingPage() {
         </div>
       </div>
 
-      {/* Edit Item Modal */}
       <EditBillItemModal
         open={!!editItem}
         item={editItem}
