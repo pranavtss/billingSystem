@@ -93,7 +93,7 @@ export default function SearchBarForUpdate({ label, value, onChange, placeholder
       <input
         ref={inputRef}
         type="text"
-        className="w-full border p-2 rounded"
+        className="w-full rounded-xl border border-slate-200 bg-white/90 px-3 py-2.5 text-sm shadow-inner focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none"
         value={inputVal}
         placeholder={placeholder || "Search..."}
         onChange={handleChange}
@@ -106,7 +106,7 @@ export default function SearchBarForUpdate({ label, value, onChange, placeholder
       {suggestions.length > 0 && (
         <ul
           role="listbox"
-          className="absolute w-full border rounded bg-white mt-1 shadow-md max-h-40 overflow-y-auto z-10"
+          className="absolute w-full border rounded-xl bg-white mt-1 shadow-md max-h-40 overflow-y-auto z-10"
         >
           {suggestions.map((item, index) => (
             <li

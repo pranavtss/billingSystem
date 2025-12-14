@@ -29,7 +29,7 @@ function Customers() {
       } else if (Array.isArray(data.data)) {
         setCustomerList(data.data);
       } else {
-        alert("Unexpected data format");
+        showToast("Unexpected data format");
       }
     })
     .catch(err => {
@@ -81,11 +81,11 @@ function Customers() {
         );
         showToast("Customer updated successfully");
       } else {
-        alert("Failed updating" + " : " + data.message);
+        showToast("Failed updating: " + data.message);
       }
     } catch (err) {
       console.log(err);
-      alert("Error updating");
+      showToast("Error updating");
     } finally {
       setEditOpen(false);
       setEditCustomer(null);
@@ -106,13 +106,14 @@ function Customers() {
       console.log("deleted:", data);
       if(data.message === "Customer deleted successfully"){
         setCustomerList(prev => prev.filter(c => c.customerID !== deleteid));
+        showToast("Customer deleted successfully");
       }
       else{
-        alert("Failed", + data.message);
+        showToast("Failed: " + data.message);
       }
     }
     catch(err){
-      alert("Error deleting customer" + err);
+      showToast("Error deleting customer");
     }
   }
 

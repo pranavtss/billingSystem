@@ -200,19 +200,12 @@ export default function CustomerQueue({ data, setData, pending, pendingTotal, fi
                     Bill: ₹{Number.isFinite(total) ? total.toFixed(2) : "0.00"}
                   </div>
 
-                  <div className="flex gap-2 mt-auto w-full">
+                  <div className="mt-auto w-full">
                     <button
-                      className="flex-1 px-2 py-2 bg-indigo-600 text-white rounded-lg text-sm font-semibold hover:bg-indigo-700 transition"
+                      className="w-full px-3 py-3 bg-indigo-600 text-white rounded-xl text-sm font-semibold hover:bg-indigo-700 transition"
                       onClick={() => navigate(`/billing?customerID=${customer.customerID}`)}
                     >
                       View
-                    </button>
-
-                    <button
-                      className="flex-1 px-2 py-2 bg-green-600 text-white rounded-lg text-sm font-semibold"
-                      onClick={() => handleSubmitPurchase(customer.customerID)}
-                    >
-                      Submit
                     </button>
                   </div>
                 </div>

@@ -26,7 +26,7 @@ export default function ViewUsers() {
                 allUsers = data.data;
             }
             else{
-                alert("Unexpected data format");
+                showToast("Unexpected data format");
                 return;
             }
             const filterUser = allUsers.filter(user => user.role !== "admin" );
@@ -60,12 +60,12 @@ export default function ViewUsers() {
                 showToast("User deleted successfully");
             }
             else{
-                alert("Failed to delete user: " + data.message);
+                showToast("Failed to delete user: " + data.message);
             }
         }
         catch (error) {
             console.error("Error deleting user:", error);
-            alert("Failed to delete user: " + error.message);
+            showToast("Failed to delete user");
         }
     }
 

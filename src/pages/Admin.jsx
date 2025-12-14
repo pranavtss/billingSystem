@@ -67,7 +67,10 @@ export default function Admin({
         })
       });
       const data = await res.json();
-      if(!res.ok) return alert(data.message || "Failed to add user");
+      if(!res.ok) {
+        showToast(data.message || "Failed to add user");
+        return;
+      }
       setNewUser({id:"", name:"",password:""});
       showToast("User added successfully");
 
@@ -90,7 +93,10 @@ export default function Admin({
         })
       });
       const data = await res.json();
-      if(!res.ok) return alert(data.message || "Failed to add customer");
+      if(!res.ok) {
+        showToast(data.message || "Failed to add customer");
+        return;
+      }
       setNewCustomer({id:"",name:"",phone:""});
       showToast("Customer added successfully");
     }
@@ -103,14 +109,16 @@ export default function Admin({
     try{
       console.log("newFish state:", JSON.stringify(newFish));
       if (!newFish.fishID || !newFish.fishName || String(newFish.fishID).trim() === "" || String(newFish.fishName).trim() === "") {
-        return alert("Provide a valid Fish ID and Name");
+        showToast("Provide a valid Fish ID and Name");
+        return;
       }
       
       const kgPrice = newFish.kgPrice ? Number(newFish.kgPrice) : 0;
       const boxPrice = newFish.boxPrice ? Number(newFish.boxPrice) : 0;
       
       if (kgPrice === 0 && boxPrice === 0) {
-        return alert("Provide at least one price (kg or box)");
+        showToast("Provide at least one price (kg or box)");
+        return;
       }
 
       const payload = {
@@ -128,7 +136,10 @@ export default function Admin({
         body:JSON.stringify(payload)
       })
       const data = await res.json();
-      if(!res.ok) return alert(data.msg || data.message || "Failed to add fish");
+      if(!res.ok) {
+        showToast(data.msg || data.message || "Failed to add fish");
+        return;
+      }
       
       if (data.fish) {
         const updatedList = [...fishesList, data.fish].sort((a, b) => {
@@ -288,8 +299,6 @@ export default function Admin({
             />
           </div>
         </div>
-
-        {/* RIGHT SIDE — Customer Queue Sidebar */}
         <div className="bg-white rounded-xl shadow-lg p-3 sm:p-4 border border-blue-200 xl:sticky xl:top-4 max-h-[85vh] overflow-x-hidden w-full">
           <h2 className="text-base sm:text-lg font-semibold mb-2">Customers Queue</h2>
 
