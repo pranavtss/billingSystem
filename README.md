@@ -1,4 +1,4 @@
-# Lumoryn Billing – Frontend
+# Lumoryn Billings – Frontend
 
 A **fish shop billing system frontend** built with **React + Vite**, designed based on **real fish shop owner requirements**. The UI is intentionally simple and fast, optimized for counter billing where one admin handles billing while other staff manage fish selection and delivery.
 
