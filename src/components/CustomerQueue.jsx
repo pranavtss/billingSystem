@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import CustomerBillModal from "./CustomerBillModal";
 import Toast from "./Toast";
 
 export default function CustomerQueue({ data, setData, pending, pendingTotal, fishes, customers }) {
+  const navigate = useNavigate();
   const [viewCustomerId, setViewCustomerId] = useState(null);
   const [customerList, setCustomerList] = useState([]);
   const [purchasesList, setPurchasesList] = useState([]);
@@ -200,8 +202,8 @@ export default function CustomerQueue({ data, setData, pending, pendingTotal, fi
 
                   <div className="flex gap-2 mt-auto w-full">
                     <button
-                      className="flex-1 px-2 py-2 bg-indigo-600 text-white rounded-lg text-sm font-semibold"
-                      onClick={() => setViewCustomerId(customer.customerID)}
+                      className="flex-1 px-2 py-2 bg-indigo-600 text-white rounded-lg text-sm font-semibold hover:bg-indigo-700 transition"
+                      onClick={() => navigate(`/billing?customerID=${customer.customerID}`)}
                     >
                       View
                     </button>

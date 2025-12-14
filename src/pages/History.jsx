@@ -29,10 +29,10 @@ export default function History({ history, users }) {
         <h2 className="text-xl sm:text-2xl font-bold">History</h2>
         <div className="flex flex-wrap gap-2">
           <button
-            onClick={()=>navigate("/admin")}
-            className="px-3 py-2 text-sm sm:text-base bg-slate-200 rounded hover:bg-slate-300 transition"
+            onClick={() => navigate(customerId ? "/customers" : "/admin")}
+            className="px-4 py-2 bg-gray-300 text-gray-800 font-bold rounded hover:bg-gray-400 transition"
           >
-            Back to Admin
+            {customerId ? "Back" : "Back to Admin"}
           </button>
         </div>
       </div>

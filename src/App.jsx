@@ -6,6 +6,7 @@ import Admin from "./pages/Admin";
 import User from "./pages/User";
 import History from "./pages/History";
 import Customers from "./pages/Customers";
+import BillingPage from "./pages/BillingPage";
 
 const getAuthInfo = () => ({
   token: localStorage.getItem("token"),
@@ -393,6 +394,11 @@ export default function App() {
               deleteCustomer,
               editCustomer
             }} />
+          </ProtectedRoute>
+        } />
+        <Route path="/billing" element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <BillingPage />
           </ProtectedRoute>
         } />
         <Route path="*" element={<Navigate to="/" replace />} />

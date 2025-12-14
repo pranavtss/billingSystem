@@ -31,7 +31,6 @@ export default function HistoryList({ history }) {
                 <li key={idx} className="flex justify-between border-t py-1">
                   <div>
                     {it.fishName || it.fishId || it.fishID} x {it.qty ?? it.quantity} {it.unit ?? 'kg'}
-                    <span className="text-xs text-gray-500"> (added by {(it.addedBy?.username || it.userName || it.userID || 'unknown')})</span>
                   </div>
                   <div>₹ {(Number(it.price || it.kgprice || it.boxprice || 0) * Number(it.qty || it.quantity || 0)).toFixed(2)}</div>
                 </li>
@@ -40,7 +39,6 @@ export default function HistoryList({ history }) {
               <li className="flex justify-between border-t py-1">
                 <div>
                   {h.fishID} x {h.quantity} {h.unit || 'kg'}
-                  <span className="text-xs text-gray-500"> (by {h.userID || 'unknown'})</span>
                 </div>
                 <div>₹ {(Number(h.totalPrice || (Number(h.quantity || 0) * (Number(h.kgprice || h.boxprice || 0))))).toFixed(2)}</div>
               </li>

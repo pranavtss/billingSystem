@@ -48,38 +48,43 @@ export default function User({ data }) {
 
       if (!customerId) return alert("Please select a customer");
       if (!fishIdentifier) return alert("Please select a fish");
+      
       const qtyKgNum = Number(qtyKg) || 0;
       const qtyBoxNum = Number(qtyBox) || 0;
       const filled = [qtyKgNum > 0, qtyBoxNum > 0].filter(Boolean).length;
       if (filled === 0) return alert("Enter quantity in kg or box");
-      if (filled > 1) return alert("Use only one field at a time (kg or box)");
 
-      const unit = qtyBoxNum > 0 ? "box" : "kg";
-      const quantity = unit === "box" ? qtyBoxNum : qtyKgNum;
+      // If both are filled, submit both as separate entries
+      const submitQuantities = [];
+      if (qtyKgNum > 0) submitQuantities.push({ quantity: qtyKgNum, unit: "kg" });
+      if (qtyBoxNum > 0) submitQuantities.push({ quantity: qtyBoxNum, unit: "box" });
 
-      const res = await fetch("http://localhost:5000/user", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${localStorage.getItem("token")}`
-        },
-        body: JSON.stringify({
-          userID: (submitUserId),
-          customerID: customerId,
-          fishID: fishIdentifier,
-          quantity,
-          unit
-        })
-      });
-      const result = await res.json();
-      if(result && result.message === "Purchase recorded successfully") {
-        showToast("Added to pending successfully");
-        setQtyKg("");
-        setQtyBox("");
-        setFishIdentifier("");
-      } else {
-        alert(result.message || "Failed to add to pending");
+      for (const item of submitQuantities) {
+        const res = await fetch("http://localhost:5000/user", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${localStorage.getItem("token")}`
+          },
+          body: JSON.stringify({
+            userID: (submitUserId),
+            customerID: customerId,
+            fishID: fishIdentifier,
+            quantity: item.quantity,
+            unit: item.unit
+          })
+        });
+        const result = await res.json();
+        if(!result || result.message !== "Purchase recorded successfully") {
+          alert(result.message || "Failed to add to pending");
+          return;
+        }
       }
+      
+      showToast("Added to pending successfully");
+      setQtyKg("");
+      setQtyBox("");
+      setFishIdentifier("");
     }catch(error){
       console.log("Error adding purchase:", error);
       return alert("An error occurred while adding the purchase.");
