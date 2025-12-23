@@ -50,7 +50,7 @@ This repository contains **only the frontend** of the application.
 The backend is developed using **Node.js, Express, and MongoDB Atlas**.
 
 👉 **Backend GitHub Repository:**
-[BillingSystem Frontend Repo Link](https://github.com/pranavtss/billingSystem-Backend.git)
+[BillingSystem Backend Repo Link](https://github.com/pranavtss/billingSystem-Backend.git)
 
 Make sure the backend server is running before starting the frontend.
 
