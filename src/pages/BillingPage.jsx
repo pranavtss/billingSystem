@@ -5,6 +5,7 @@ import ConfirmDeleteButton from "../components/ConfirmDeleteButton";
 import { EditButton } from "../components/ActionButton";
 import Toast from "../components/Toast";
 import logo from "../image/logo.png";
+import API_BASE_URL from "../utils/api";
 
 export default function BillingPage() {
   const [searchParams] = useSearchParams();
@@ -44,10 +45,10 @@ export default function BillingPage() {
   async function fetchBillingData() {
     try {
       const [customersRes, purchasesRes, fishesRes, usersRes] = await Promise.all([
-        fetch("http://localhost:5000/admin?type=customer"),
-        fetch("http://localhost:5000/admin?type=purchase"),
-        fetch("http://localhost:5000/admin?type=fish"),
-        fetch("http://localhost:5000/admin?type=user"),
+        fetch(`${API_BASE_URL}/admin?type=customer`),
+        fetch(`${API_BASE_URL}/admin?type=purchase`),
+        fetch(`${API_BASE_URL}/admin?type=fish`),
+        fetch(`${API_BASE_URL}/admin?type=user`),
       ]);
 
       const customersData = await customersRes.json();
@@ -114,7 +115,7 @@ export default function BillingPage() {
 
   async function handleDeleteItem(itemId) {
     try {
-      const res = await fetch("http://localhost:5000/admin", {
+      const res = await fetch(`${API_BASE_URL}/admin`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -136,7 +137,7 @@ export default function BillingPage() {
 
   async function handleUpdatePrice(_id, newPrice) {
     try {
-      const res = await fetch("http://localhost:5000/admin", {
+      const res = await fetch(`${API_BASE_URL}/admin`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -178,7 +179,7 @@ export default function BillingPage() {
     }
 
     try {
-      const res = await fetch("http://localhost:5000/admin", {
+      const res = await fetch(`${API_BASE_URL}/admin`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

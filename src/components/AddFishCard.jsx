@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import API_BASE_URL from "../utils/api";
 
 export default function AddFishCard() {
   const [fish, setFish] = useState({
@@ -20,7 +21,7 @@ export default function AddFishCard() {
         return alert("Provide at least one price (kg or box)");
       }
 
-      const res = await fetch("http://localhost:5000/admin", {
+      const res = await fetch(`${API_BASE_URL}/admin`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

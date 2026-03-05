@@ -4,6 +4,7 @@ import ConfirmDeleteButton from "../components/ConfirmDeleteButton";
 import BackButton from "../components/BackButton";
 import DataTable from "../components/DataTable";
 import Toast from "../components/Toast";
+import API_BASE_URL from "../utils/api";
 
 export default function ViewUsers() {
     const [search, setSearch] = useState("");
@@ -12,7 +13,7 @@ export default function ViewUsers() {
     const showToast = (msg) => setToastMessage(msg);
 
     useEffect(() =>{
-        fetch("http://localhost:5000/admin?type=user",{
+        fetch(`${API_BASE_URL}/admin?type=user`,{
             method:"GET",
             headers:{"Content-Type":"application/json"},
         })
@@ -46,7 +47,7 @@ export default function ViewUsers() {
 
     async function handleDeleteUser(id) {
         try{
-            const res = await fetch("http://localhost:5000/admin", {
+            const res = await fetch(`${API_BASE_URL}/admin`, {
                 method:"DELETE",
                 headers:{"Content-Type":"application/json"},
                 body:JSON.stringify({

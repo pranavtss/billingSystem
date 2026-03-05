@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import Logout from "../components/Logout";
 import SearchBarForUpdate from "../components/SearchBarForUpdate";
 import Toast from "../components/Toast";
+import API_BASE_URL from "../utils/api";
 
 export default function User({ data }) {
 
@@ -17,7 +18,7 @@ export default function User({ data }) {
   React.useEffect(() => {
     async function fetchCustomers() {
       try {
-        const res = await fetch("http://localhost:5000/admin?type=customer", {
+        const res = await fetch(`${API_BASE_URL}/admin?type=customer`, {
           method: "GET",
           headers: { "Content-Type": "application/json" }
         });
@@ -69,7 +70,7 @@ export default function User({ data }) {
       if (qtyBoxNum > 0) submitQuantities.push({ quantity: qtyBoxNum, unit: "box" });
 
       for (const item of submitQuantities) {
-        const res = await fetch("http://localhost:5000/user", {
+        const res = await fetch(`${API_BASE_URL}/user`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

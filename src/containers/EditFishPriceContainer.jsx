@@ -1,6 +1,7 @@
 import React from "react";
 import SearchBarForUpdate from "../components/SearchBarForUpdate";
 import ConfirmDeleteButton from "../components/ConfirmDeleteButton";
+import API_BASE_URL from "../utils/api";
 
 export default function EditFishPriceContainer({
   fishIdentifier,
@@ -15,7 +16,7 @@ export default function EditFishPriceContainer({
 }) {
   async function handleDelete(fishID) {
     try {
-      const res = await fetch("http://localhost:5000/admin", {
+      const res = await fetch(`${API_BASE_URL}/admin`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

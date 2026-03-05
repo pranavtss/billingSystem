@@ -7,6 +7,7 @@ import SearchBar from '../components/SearchBar';
 import BackButton from '../components/BackButton';
 import Toast from '../components/Toast';
 import DataTable from '../components/DataTable';
+import API_BASE_URL from "../utils/api";
 
 function Customers() {
   const navigate = useNavigate();
@@ -16,7 +17,7 @@ function Customers() {
   const showToast = (msg) => setToastMessage(msg);
 
   useEffect(() => {
-    fetch("http://localhost:5000/admin?type=customer", {
+    fetch(`${API_BASE_URL}/admin?type=customer`, {
       method: "GET",
       headers: { "Content-Type": "application/json" }
     })
@@ -61,7 +62,7 @@ function Customers() {
 
   async function handleSaveCustomer(updated) {
     try {
-      const response = await fetch("http://localhost:5000/admin", {
+      const response = await fetch(`${API_BASE_URL}/admin`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -94,7 +95,7 @@ function Customers() {
 
   async function handleDeleteCustomer(deleteid) {
     try{
-      const response = await fetch("http://localhost:5000/admin", {
+      const response = await fetch(`${API_BASE_URL}/admin`, {
         method: "DELETE",
         headers:{"Content-Type" : "application/json"},
         body:JSON.stringify({

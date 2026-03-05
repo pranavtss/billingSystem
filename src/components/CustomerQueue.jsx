@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import CustomerBillModal from "./CustomerBillModal";
 import Toast from "./Toast";
+import API_BASE_URL from "../utils/api";
 
 export default function CustomerQueue({ data, setData, pending, pendingTotal, fishes, customers }) {
   const navigate = useNavigate();
@@ -13,7 +14,7 @@ export default function CustomerQueue({ data, setData, pending, pendingTotal, fi
   useEffect(() => {
     async function fetchCustomers() {
       try {
-        const res = await fetch("http://localhost:5000/admin?type=purchase", {
+        const res = await fetch(`${API_BASE_URL}/admin?type=purchase`, {
           method: "GET",
           headers: { "Content-Type": "application/json" },
         });
@@ -49,7 +50,7 @@ export default function CustomerQueue({ data, setData, pending, pendingTotal, fi
 
   async function refreshPurchases() {
     try {
-      const res = await fetch("http://localhost:5000/admin?type=purchase", {
+      const res = await fetch(`${API_BASE_URL}/admin?type=purchase`, {
         method: "GET",
         headers: { "Content-Type": "application/json" },
       });
@@ -87,7 +88,7 @@ export default function CustomerQueue({ data, setData, pending, pendingTotal, fi
         return;
       }
 
-      const res = await fetch("http://localhost:5000/admin", {
+      const res = await fetch(`${API_BASE_URL}/admin`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

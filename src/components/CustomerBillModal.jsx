@@ -3,6 +3,7 @@ import { EditButton } from "./ActionButton";
 import ConfirmDeleteButton from "./ConfirmDeleteButton";
 import EditBillItemModal from "./EditBillItemModal";
 import Toast from "./Toast";
+import API_BASE_URL from "../utils/api";
 
 export default function CustomerBillModal({ open, onClose, pending, purchases = [], customerID, fishes = [], total = 0, onRefresh }) {
     const [editItem, setEditItem] = useState(null);
@@ -12,7 +13,7 @@ export default function CustomerBillModal({ open, onClose, pending, purchases = 
 
     async function handleDeletePurchase(itemId){
         try{
-            const res = await fetch("http://localhost:5000/admin", {
+            const res = await fetch(`${API_BASE_URL}/admin`, {
                 method: "DELETE",
                 headers:{"Content-Type" : "application/json"},
                 body:JSON.stringify({
@@ -37,7 +38,7 @@ export default function CustomerBillModal({ open, onClose, pending, purchases = 
 
     async function handleUpdatePurchase(_id , newPrice){
         try{
-            const res = await fetch("http://localhost:5000/admin", {
+            const res = await fetch(`${API_BASE_URL}/admin`, {
                 method: "POST",
                 headers:{"Content-Type" : "application/json"},
                 body:JSON.stringify({

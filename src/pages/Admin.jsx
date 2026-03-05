@@ -9,6 +9,7 @@ import EditBillModal from "../components/EditBillModal";
 import CreateUserContainer from "../containers/CreateUserContainer";
 import CreateCustomerContainer from "../containers/CreateCustomerContainer";
 import Toast from "../components/Toast";
+import API_BASE_URL from "../utils/api";
 
 export default function Admin({
   data,
@@ -36,7 +37,7 @@ export default function Admin({
   React.useEffect(() =>{
     async function fetchFishes(){
       try{
-        const res = await fetch("http://localhost:5000/admin?type=fish");
+        const res = await fetch(`${API_BASE_URL}/admin?type=fish`);
         const data = await res.json();
         if(data.ok){
           const sortedFishes = data.data.sort((a, b) => {
@@ -55,7 +56,7 @@ export default function Admin({
   },[]);
   async function handleAddUser() {
     try{
-      const res = await fetch("http://localhost:5000/admin", {
+      const res = await fetch(`${API_BASE_URL}/admin`, {
         method: "POST",
         headers: {"Content-Type" : "application/json"},
         body: JSON.stringify({
@@ -82,7 +83,7 @@ export default function Admin({
 
   async function handleAddCustomer() {
     try{
-      const res = await fetch("http://localhost:5000/admin", {
+      const res = await fetch(`${API_BASE_URL}/admin`, {
         method:"POST",
         headers:{"Content-Type" : "application/json"},
         body: JSON.stringify({
@@ -130,7 +131,7 @@ export default function Admin({
         boxPrice: boxPrice,
       };
       console.log("Sending add fish payload:", JSON.stringify(payload));
-      const res = await fetch("http://localhost:5000/admin", {
+      const res = await fetch(`${API_BASE_URL}/admin`, {
         method : "POST",
         headers:{"Content-Type" : "application/json"},
         body:JSON.stringify(payload)
@@ -193,7 +194,7 @@ export default function Admin({
         boxPrice: parsedBox !== null ? parsedBox : targetFish.boxPrice,
       };
 
-      const res = await fetch("http://localhost:5000/admin", {
+      const res = await fetch(`${API_BASE_URL}/admin`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

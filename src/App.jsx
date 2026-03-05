@@ -7,6 +7,7 @@ import User from "./pages/User";
 import History from "./pages/History";
 import Customers from "./pages/Customers";
 import BillingPage from "./pages/BillingPage";
+import API_BASE_URL from "./utils/api";
 
 const getAuthInfo = () => ({
   token: localStorage.getItem("token"),
@@ -62,9 +63,9 @@ export default function App() {
     async function fetchAll() {
       try {
         const [usersRes, customersRes, fishesRes] = await Promise.all([
-          fetch("http://localhost:5000/admin?type=user"),
-          fetch("http://localhost:5000/admin?type=customer"),
-          fetch("http://localhost:5000/admin?type=fish"),
+          fetch(`${API_BASE_URL}/admin?type=user`),
+          fetch(`${API_BASE_URL}/admin?type=customer`),
+          fetch(`${API_BASE_URL}/admin?type=fish`),
         ]);
         const usersJson = await usersRes.json();
         const customersJson = await customersRes.json();
@@ -86,9 +87,9 @@ export default function App() {
   async function refreshLists() {
     try {
       const [usersRes, customersRes, fishesRes] = await Promise.all([
-        fetch("http://localhost:5000/admin?type=user"),
-        fetch("http://localhost:5000/admin?type=customer"),
-        fetch("http://localhost:5000/admin?type=fish"),
+        fetch(`${API_BASE_URL}/admin?type=user`),
+        fetch(`${API_BASE_URL}/admin?type=customer`),
+        fetch(`${API_BASE_URL}/admin?type=fish`),
       ]);
       const usersJson = await usersRes.json();
       const customersJson = await customersRes.json();
@@ -106,7 +107,7 @@ export default function App() {
 
   async function addUser(user) {
     try {
-      const res = await fetch("http://localhost:5000/admin", {
+      const res = await fetch(`${API_BASE_URL}/admin`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -129,7 +130,7 @@ export default function App() {
 
   async function deleteUser(userId) {
     try {
-      const res = await fetch("http://localhost:5000/admin", {
+      const res = await fetch(`${API_BASE_URL}/admin`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ type: "deleteuser", userID: userId }),
@@ -148,7 +149,7 @@ export default function App() {
 
   async function addCustomer(customer) {
     try {
-      const res = await fetch("http://localhost:5000/admin", {
+      const res = await fetch(`${API_BASE_URL}/admin`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -167,7 +168,7 @@ export default function App() {
 
   async function deleteCustomer(customerId) {
     try {
-      const res = await fetch("http://localhost:5000/admin", {
+      const res = await fetch(`${API_BASE_URL}/admin`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -187,7 +188,7 @@ export default function App() {
 
   async function editCustomer(updated) {
     try {
-      const res = await fetch("http://localhost:5000/admin", {
+      const res = await fetch(`${API_BASE_URL}/admin`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -217,7 +218,7 @@ export default function App() {
         kgPrice: fish.kgPrice ?? (fish.kgPrice === 0 ? 0 : fish.kgPrice),
         boxPrice: fish.boxPrice ?? (fish.boxPrice === 0 ? 0 : fish.boxPrice),
       };
-      const res = await fetch("http://localhost:5000/admin", {
+      const res = await fetch(`${API_BASE_URL}/admin`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -234,7 +235,7 @@ export default function App() {
 
   async function deleteFish(fishId) {
     try {
-      const res = await fetch("http://localhost:5000/admin", {
+      const res = await fetch(`${API_BASE_URL}/admin`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -254,7 +255,7 @@ export default function App() {
 
   async function editFishPrice(identifier, price, unit = 'kg') {
     try {
-      const res = await fetch("http://localhost:5000/admin", {
+      const res = await fetch(`${API_BASE_URL}/admin`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -278,7 +279,7 @@ export default function App() {
 
   async function addPurchase({ userId, customerId, fishId, qty, unit = 'kg' }) {
     try{
-      const res = await fetch("http://localhost:5000/user", {
+      const res = await fetch(`${API_BASE_URL}/user`, {
         method: "POST",
         headers:{"Content-Type" : "application/json"},
         body: JSON.stringify({
@@ -325,7 +326,7 @@ export default function App() {
   React.useEffect(() => {
     async function fetchHistory() {
       try{
-        const res = await fetch("http://localhost:5000/history" ,{
+        const res = await fetch(`${API_BASE_URL}/history` ,{
           method:"GET",
           headers:{"Content-Type":"application/json"}
         })

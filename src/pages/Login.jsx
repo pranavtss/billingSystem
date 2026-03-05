@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import logo from "../image/logo.png";
 import Toast from "../components/Toast";
+import API_BASE_URL from "../utils/api";
 
 export default function Login() {
   const [id, setId] = useState("");
@@ -18,7 +19,7 @@ export default function Login() {
 
   async function handleLogin() {
     try{
-      const res = await fetch("http://localhost:5000/", {
+      const res = await fetch(`${API_BASE_URL}/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
