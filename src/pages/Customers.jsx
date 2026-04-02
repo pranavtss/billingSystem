@@ -16,7 +16,7 @@ function Customers() {
   const showToast = (msg) => setToastMessage(msg);
 
   useEffect(() => {
-    fetch("http://localhost:5000/admin?type=customer", {
+    fetch("https://billingsystem-backend-xjdb.onrender.com/admin?type=customer", {
       method: "GET",
       headers: { "Content-Type": "application/json" }
     })
@@ -61,7 +61,7 @@ function Customers() {
 
   async function handleSaveCustomer(updated) {
     try {
-      const response = await fetch("http://localhost:5000/admin", {
+      const response = await fetch("https://billingsystem-backend-xjdb.onrender.com/admin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -94,7 +94,7 @@ function Customers() {
 
   async function handleDeleteCustomer(deleteid) {
     try{
-      const response = await fetch("http://localhost:5000/admin", {
+      const response = await fetch("https://billingsystem-backend-xjdb.onrender.com/admin", {
         method: "DELETE",
         headers:{"Content-Type" : "application/json"},
         body:JSON.stringify({
@@ -171,3 +171,4 @@ function Customers() {
 }
 
 export default Customers;
+

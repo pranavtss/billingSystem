@@ -44,10 +44,10 @@ export default function BillingPage() {
   async function fetchBillingData() {
     try {
       const [customersRes, purchasesRes, fishesRes, usersRes] = await Promise.all([
-        fetch("http://localhost:5000/admin?type=customer"),
-        fetch("http://localhost:5000/admin?type=purchase"),
-        fetch("http://localhost:5000/admin?type=fish"),
-        fetch("http://localhost:5000/admin?type=user"),
+        fetch("https://billingsystem-backend-xjdb.onrender.com/admin?type=customer"),
+        fetch("https://billingsystem-backend-xjdb.onrender.com/admin?type=purchase"),
+        fetch("https://billingsystem-backend-xjdb.onrender.com/admin?type=fish"),
+        fetch("https://billingsystem-backend-xjdb.onrender.com/admin?type=user"),
       ]);
 
       const customersData = await customersRes.json();
@@ -114,7 +114,7 @@ export default function BillingPage() {
 
   async function handleDeleteItem(itemId) {
     try {
-      const res = await fetch("http://localhost:5000/admin", {
+      const res = await fetch("https://billingsystem-backend-xjdb.onrender.com/admin", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -136,7 +136,7 @@ export default function BillingPage() {
 
   async function handleUpdatePrice(_id, newPrice) {
     try {
-      const res = await fetch("http://localhost:5000/admin", {
+      const res = await fetch("https://billingsystem-backend-xjdb.onrender.com/admin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -178,7 +178,7 @@ export default function BillingPage() {
     }
 
     try {
-      const res = await fetch("http://localhost:5000/admin", {
+      const res = await fetch("https://billingsystem-backend-xjdb.onrender.com/admin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -381,3 +381,4 @@ export default function BillingPage() {
     </div>
   );
 }
+

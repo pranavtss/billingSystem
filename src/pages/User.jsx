@@ -17,7 +17,7 @@ export default function User({ data }) {
   React.useEffect(() => {
     async function fetchCustomers() {
       try {
-        const res = await fetch("http://localhost:5000/admin?type=customer", {
+        const res = await fetch("https://billingsystem-backend-xjdb.onrender.com/admin?type=customer", {
           method: "GET",
           headers: { "Content-Type": "application/json" }
         });
@@ -69,7 +69,7 @@ export default function User({ data }) {
       if (qtyBoxNum > 0) submitQuantities.push({ quantity: qtyBoxNum, unit: "box" });
 
       for (const item of submitQuantities) {
-        const res = await fetch("http://localhost:5000/user", {
+        const res = await fetch("https://billingsystem-backend-xjdb.onrender.com/user", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -204,3 +204,4 @@ export default function User({ data }) {
     </div>
   );
 }
+

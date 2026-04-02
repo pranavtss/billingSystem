@@ -15,7 +15,7 @@ export default function EditFishPriceContainer({
 }) {
   async function handleDelete(fishID) {
     try {
-      const res = await fetch("http://localhost:5000/admin", {
+      const res = await fetch("https://billingsystem-backend-xjdb.onrender.com/admin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -116,3 +116,4 @@ export default function EditFishPriceContainer({
     </div>
   );
 }
+

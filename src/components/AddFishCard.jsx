@@ -20,7 +20,7 @@ export default function AddFishCard() {
         return alert("Provide at least one price (kg or box)");
       }
 
-      const res = await fetch("http://localhost:5000/admin", {
+      const res = await fetch("https://billingsystem-backend-xjdb.onrender.com/admin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -99,3 +99,4 @@ export default function AddFishCard() {
     </div>
   );
 }
+

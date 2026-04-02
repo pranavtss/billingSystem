@@ -12,7 +12,7 @@ export default function ViewUsers() {
     const showToast = (msg) => setToastMessage(msg);
 
     useEffect(() =>{
-        fetch("http://localhost:5000/admin?type=user",{
+        fetch("https://billingsystem-backend-xjdb.onrender.com/admin?type=user",{
             method:"GET",
             headers:{"Content-Type":"application/json"},
         })
@@ -46,7 +46,7 @@ export default function ViewUsers() {
 
     async function handleDeleteUser(id) {
         try{
-            const res = await fetch("http://localhost:5000/admin", {
+            const res = await fetch("https://billingsystem-backend-xjdb.onrender.com/admin", {
                 method:"DELETE",
                 headers:{"Content-Type":"application/json"},
                 body:JSON.stringify({
@@ -107,3 +107,4 @@ export default function ViewUsers() {
         </div>
     );
 }
+

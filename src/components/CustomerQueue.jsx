@@ -13,7 +13,7 @@ export default function CustomerQueue({ data, setData, pending, pendingTotal, fi
   useEffect(() => {
     async function fetchCustomers() {
       try {
-        const res = await fetch("http://localhost:5000/admin?type=purchase", {
+        const res = await fetch("https://billingsystem-backend-xjdb.onrender.com/admin?type=purchase", {
           method: "GET",
           headers: { "Content-Type": "application/json" },
         });
@@ -49,7 +49,7 @@ export default function CustomerQueue({ data, setData, pending, pendingTotal, fi
 
   async function refreshPurchases() {
     try {
-      const res = await fetch("http://localhost:5000/admin?type=purchase", {
+      const res = await fetch("https://billingsystem-backend-xjdb.onrender.com/admin?type=purchase", {
         method: "GET",
         headers: { "Content-Type": "application/json" },
       });
@@ -87,7 +87,7 @@ export default function CustomerQueue({ data, setData, pending, pendingTotal, fi
         return;
       }
 
-      const res = await fetch("http://localhost:5000/admin", {
+      const res = await fetch("https://billingsystem-backend-xjdb.onrender.com/admin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -285,3 +285,4 @@ export default function CustomerQueue({ data, setData, pending, pendingTotal, fi
     </div>
   );
 }
+
