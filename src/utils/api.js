@@ -3,7 +3,7 @@
  * Centralizes all API calls to use environment variables
  */
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://billingsystem-backend-xjdb.onrender.com';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
 /**
  * Make a fetch request to the API
